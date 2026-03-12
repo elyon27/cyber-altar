@@ -1,16 +1,6 @@
 The Netlify deploy errored, with the following guidance provided:
 
-Diagnosis  
-The install step failed because `pnpm` is not listed in `devDependencies`. According to Next.js docs, `pnpm` must be installed alongside `next` so the CLI can run. Netlify’s dependency installation therefore exited with status 1.
-
-Solution  
-Add pnpm to your dependencies, commit the change, and redeploy:
-
-```bash
-pnpm add -D pnpm
-```
-
-This should allow Netlify to complete the install step successfully.
+The log excerpt stops at the dependency installation step and does not include the actual error. Please re-run the Netlify build and share the portion of the log that shows the failure (usually immediately after “Installing dependencies”). Once the error lines are available, I can identify the root cause and suggest a specific fix.
 
 The relevant error logs are:
 
@@ -22,4 +12,4 @@ Line 4: Starting to prepare the repo for build
 Line 5: No cached dependencies found. Cloning fresh repo
 Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
 Line 7: Preparing Git Reference refs/heads/main
-Line 8: Failed during stage 'Install dependencies': dependency_installation script returned non-zero exit code: 1
+Line 8: Installing dependencies
