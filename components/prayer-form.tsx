@@ -1,19 +1,25 @@
 "use client"
 
-export default function PrayerForm() {
+type Props = {
+  altarSlug: string
+}
+
+export default function PrayerForm({ altarSlug }: Props) {
 
   return (
 
     <div style={{marginTop:"20px"}}>
 
-      <textarea
-        placeholder="Write your prayer"
-      />
+      <h3>Offer a Prayer</h3>
 
-      <input
-        type="number"
-        min={2}
-        max={12}
+      <textarea
+        placeholder={`Write a prayer for altar ${altarSlug}`}
+        style={{
+          width:"100%",
+          height:"120px",
+          padding:"10px",
+          marginTop:"10px"
+        }}
       />
 
     </div>
