@@ -1,6 +1,11 @@
 The Netlify deploy errored, with the following guidance provided:
 
-The log excerpt stops at the dependency installation step and does not include the actual error. Please re-run the Netlify build and share the portion of the log that shows the failure (usually immediately after “Installing dependencies”). Once the error lines are available, I can identify the root cause and suggest a specific fix.
+*Diagnosis*  
+- Netlify asks `mise` to install Node.js **20.14.0** from `.node-version`, but that release isn’t available in Netlify’s tool cache, so the Node install fails and the build stops ([line 12](#L12)).
+
+*Solution*  
+1. Update `.node-version` (or your Netlify build settings) to a Node release that Netlify supports today—e.g. `20.12.2`.  
+2. Commit the change and redeploy. See Netlify’s guide on [changing Node versions](https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript) if you need to adjust the build configuration.
 
 The relevant error logs are:
 
@@ -13,3 +18,8 @@ Line 5: No cached dependencies found. Cloning fresh repo
 Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
 Line 7: Preparing Git Reference refs/heads/main
 Line 8: Installing dependencies
+Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
+Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
+Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
+Line 12: Attempting Node.js version '20.14.0' from .node-version
+Line 13: Downloading and installing node v20.14.0...
