@@ -1,15 +1,16 @@
 The Netlify deploy errored, with the following guidance provided:
 
-**Diagnosis**
-- The build fails while resolving Node.js because the version string read from `.node-version` is malformed (`'��20\r'`), as shown in [lines 13-16](#L13-L16). This indicates the file likely contains a BOM or Windows carriage-return characters, so Netlify cannot match it to an available Node version.
+Diagnosis  
+The install step failed because `pnpm` is not listed in `devDependencies`. According to Next.js docs, `pnpm` must be installed alongside `next` so the CLI can run. Netlify’s dependency installation therefore exited with status 1.
 
-**Solution**
-1. Normalize `.node-version` so it contains only a plain Node version (e.g., `20.14.0`) with Unix line endings:
-   ```bash
-   printf '20.14.0\n' > .node-version
-   ```
-   Commit the change.
-2. If you intend to use a different Node release, set the desired version in `.node-version` and review Netlify’s guide on [changing Node versions](https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript).
+Solution  
+Add pnpm to your dependencies, commit the change, and redeploy:
+
+```bash
+pnpm add -D pnpm
+```
+
+This should allow Netlify to complete the install step successfully.
 
 The relevant error logs are:
 
@@ -21,17 +22,4 @@ Line 4: Starting to prepare the repo for build
 Line 5: No cached dependencies found. Cloning fresh repo
 Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
 Line 7: Preparing Git Reference refs/heads/main
-Line 8: Installing dependencies
-Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
-Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
-Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
-Line 12: /opt/build-bin/run-build-functions.sh: line 380: warning: command substitution: ignored null byte in input
-Line 13: Attempting Node.js version '��20
-' from .node-version
-Line 14: Failed during stage 'Install dependencies': dependency_installation script returned non-zero exit code: 1
-Line 15: Version '��20
-' not found - try `nvm ls-remote` to browse available versions.
-Line 16: Failed to install Node.js version '��20
-'
-Line 17: Failing build: Failed to install dependencies
-Line 18: Finished processing build request in 2.901s
+Line 8: Failed during stage 'Install dependencies': dependency_installation script returned non-zero exit code: 1
