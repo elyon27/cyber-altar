@@ -19,17 +19,9 @@ export default function PrayerList({ altarSlug }:{altarSlug:string}){
     setPrayers(data || []);
   }
 
-  useEffect(() => {
-
-    async function loadPrayers() {
-      const res = await fetch("/api/prayers");
-      const data = await res.json();
-      setPrayers(data);
-    }
-
+  useEffect(()=>{
     loadPrayers();
-
-  }, []);
+  },[]);
 
   return(
 

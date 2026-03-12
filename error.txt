@@ -1,25 +1,75 @@
-The Netlify deploy errored, with the following guidance provided:
+   ▲ Next.js 15.5.12
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.100:3000
+   - Environments: .env.local
 
-*Diagnosis*  
-- Netlify asks `mise` to install Node.js **20.14.0** from `.node-version`, but that release isn’t available in Netlify’s tool cache, so the Node install fails and the build stops ([line 12](#L12)).
+ ✓ Starting...
+ ✓ Ready in 7s
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ○ Compiling / ...
+ ⨯ ./app/page.tsx:1:1
+Module not found: Can't resolve '@/components/altar-scene'
+> 1 | import { AltarScene } from "@/components/altar-scene";
+    | ^
+  2 | import { AuthCard } from "@/components/auth-card";
+  3 | import { SiteHeader } from "@/components/site-header";
+  4 |
 
-*Solution*  
-1. Update `.node-version` (or your Netlify build settings) to a Node release that Netlify supports today—e.g. `20.12.2`.  
-2. Commit the change and redeploy. See Netlify’s guide on [changing Node versions](https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript) if you need to adjust the build configuration.
+https://nextjs.org/docs/messages/module-not-found
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⨯ ./app/page.tsx:1:1
+Module not found: Can't resolve '@/components/altar-scene'
+> 1 | import { AltarScene } from "@/components/altar-scene";
+    | ^
+  2 | import { AuthCard } from "@/components/auth-card";
+  3 | import { SiteHeader } from "@/components/site-header";
+  4 |
 
-The relevant error logs are:
+https://nextjs.org/docs/messages/module-not-found
+ ⨯ ./app/page.tsx:1:1
+Module not found: Can't resolve '@/components/altar-scene'
+> 1 | import { AltarScene } from "@/components/altar-scene";
+    | ^
+  2 | import { AuthCard } from "@/components/auth-card";
+  3 | import { SiteHeader } from "@/components/site-header";
+  4 |
 
-Line 0: build-image version: 207bd4d38e2cd3af6515aa37c5942e41499b616a (noble-new-builds)
-Line 1: buildbot version: 420ff06ebdfb3fd8215b1a0a158ab916a07fe5a9
-Line 2: Fetching cached dependencies
-Line 3: Failed to fetch cache, continuing with build
-Line 4: Starting to prepare the repo for build
-Line 5: No cached dependencies found. Cloning fresh repo
-Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
-Line 7: Preparing Git Reference refs/heads/main
-Line 8: Installing dependencies
-Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
-Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
-Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
-Line 12: Attempting Node.js version '20.14.0' from .node-version
-Line 13: Downloading and installing node v20.14.0...
+https://nextjs.org/docs/messages/module-not-found
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
+Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⨯ ./app/page.tsx:1:1
+Module not found: Can't resolve '@/components/altar-scene'
+> 1 | import { AltarScene } from "@/components/altar-scene";
+    | ^
+  2 | import { AuthCard } from "@/components/auth-card";
+  3 | import { SiteHeader } from "@/components/site-header";
+  4 |
+
+https://nextjs.org/docs/messages/module-not-found
