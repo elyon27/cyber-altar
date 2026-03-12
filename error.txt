@@ -1,0 +1,29 @@
+The Netlify deploy errored, with the following guidance provided:
+
+**Diagnosis**  
+- Netlify tries to install `node v22.22.1` ([line 12](#L12)), a version that does not exist on nodejs.org, so the download in [line 13](#L13) fails and the build stops.
+
+**Solution**  
+1. Edit `.mise/config.toml` so it requests a real Node release (for example the current Netlify-supported LTS such as `20.18.0`).  
+   ```toml
+   [tools]
+   node = "20.18.0"
+   ```  
+2. Commit the change, push, and redeploy. If you need more detail on setting Node versions for Netlify builds, follow their guide: https://docs.netlify.com/configure-builds/manage-dependencies/#node-js-and-javascript
+
+The relevant error logs are:
+
+Line 0: build-image version: 207bd4d38e2cd3af6515aa37c5942e41499b616a (noble-new-builds)
+Line 1: buildbot version: 420ff06ebdfb3fd8215b1a0a158ab916a07fe5a9
+Line 2: Fetching cached dependencies
+Line 3: Failed to fetch cache, continuing with build
+Line 4: Starting to prepare the repo for build
+Line 5: No cached dependencies found. Cloning fresh repo
+Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
+Line 7: Preparing Git Reference refs/heads/main
+Line 8: Installing dependencies
+Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
+Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
+Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
+Line 12: Downloading and installing node v22.22.1...
+Line 13: Downloading https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-x64.tar.xz...
