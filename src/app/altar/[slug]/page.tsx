@@ -1,16 +1,11 @@
+import CyberAltarPage from "@/components/cyber-altar/CyberAltarPage";
+
 type PageProps = {
-  params: Promise<{
+  params: {
     slug: string;
-  }>;
+  };
 };
 
-export default async function AltarPage({ params }: PageProps) {
-  const { slug } = await params;
-
-  return (
-    <div style={{ padding: "40px", textAlign: "center" }}>
-      <h1>The Holy Place</h1>
-      <p>Altar: {slug}</p>
-    </div>
-  );
+export default function AltarPage({ params }: PageProps) {
+  return <CyberAltarPage slug={params.slug} />;
 }
