@@ -5,12 +5,10 @@ type UserRecord = {
 }
 
 type HolyPlaceProps = {
-  // Used by PrayerClient
   nickname?: string
   prayer?: string
   altarImage?: string
 
-  // Used by CyberAltarPage
   currentUser?: UserRecord | null
   crossImage?: string
   candleActive?: boolean
@@ -43,7 +41,7 @@ function HolyPlace({
       )}
 
       {nickname && (
-        <h2>{nickname}'s Prayer</h2>
+        <h2>{nickname}&apos;s Prayer</h2>
       )}
 
       {crossImage && (
