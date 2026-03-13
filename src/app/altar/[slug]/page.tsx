@@ -1,15 +1,15 @@
 type PageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
-export default function AltarPage({ params }: PageProps) {
-  const { slug } = params;
+export default async function AltarPage({ params }: PageProps) {
+  const { slug } = await params;
 
   return (
     <div style={{ padding: "40px", textAlign: "center" }}>
-      <h1>Holy Place</h1>
+      <h1>The Holy Place</h1>
       <p>Altar: {slug}</p>
     </div>
   );
