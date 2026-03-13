@@ -3,33 +3,25 @@
 import Image from "next/image";
 
 type HolyPlaceProps = {
-  nickname: string
-  prayer: string
-  altarImage: string
-
-  currentUser?: UserRecord
-  crossImage?: string
-  candleActive?: boolean
-  candleHeightPercent?: number
-  remainingText?: string
-  loading?: boolean
-  onLightCandle?: () => void
-  onBack?: () => void
+  currentUser: UserRecord | null
+  crossImage: string
+  candleActive: boolean
+  candleHeightPercent: number
+  setCandleHeightPercent: React.Dispatch<React.SetStateAction<number>>
+  handlePrayerSelect: (prayer: Prayer) => void
+  selectedPrayer: Prayer | null
+  prayers: Prayer[]
 };
 
 export default function HolyPlace({
-  nickname,
-  prayer,
-  altarImage,
-
   currentUser,
   crossImage,
   candleActive,
   candleHeightPercent,
-  remainingText,
-  loading,
-  onLightCandle,
-  onBack
+  setCandleHeightPercent,
+  handlePrayerSelect,
+  selectedPrayer,
+  prayers
 }: HolyPlaceProps) {
 
   return (
