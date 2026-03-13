@@ -1,6 +1,9 @@
 import { AltarScene } from "@/components/altar-scene";
-import { AuthCard } from "@/components/auth-card";
-import { SiteHeader } from "@/components/site-header";
+//import { AuthCard } from "@/components/auth-card";
+//import { SiteHeader } from "@/components/site-header";
+
+import AuthCard from "@/components/auth-card"
+import SiteHeader from "@/components/site-header"
 
 export default function LoginPage() {
   return (

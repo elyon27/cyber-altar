@@ -1,74 +1,58 @@
 The Netlify deploy errored, with the following guidance provided:
 
-Diagnosis:
-- The build fails during the prerender step because the Supabase client receives an invalid URL. See [line 74](#L74) through [line 84](#L84): `Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.` This happens when `NEXT_PUBLIC_SUPABASE_URL` is missing or not a properly formatted `https://…` URL during the static generation of `/prayer-wall`.
+**Diagnosis**  
+- The build stops while compiling `src/app/login/page.tsx`. The errors at [line 69](#L69) and [line 72](#L72) show that webpack cannot resolve the imports `@/components/auth-card` and `@/components/site-header`. This indicates the referenced files or directories are missing, misnamed, or otherwise not accessible via the `@` alias during the build.
 
-Solution:
-1. In Netlify’s Site settings → Build & deploy → Environment, ensure that `NEXT_PUBLIC_SUPABASE_URL` is defined and set to your Supabase project URL, including the `https://` scheme (e.g., `https://your-project.supabase.co`). Confirm that `NEXT_PUBLIC_SUPABASE_ANON_KEY` is also present.
-2. Redeploy the site after updating the environment variable.
+**Solution**  
+1. In your repository, confirm that the `@` path alias maps to a location that actually contains `components/auth-card` and `components/site-header` (for example, via `tsconfig.json` / `jsconfig.json`).  
+2. Ensure that the referenced files exist with the exact same casing expected by the import (Linux builds are case-sensitive). If they are missing or named differently, either add the correct files or update the import statements to match the existing file paths (e.g., `@/components/AuthCard` vs `@/components/auth-card`).
 
 The relevant error logs are:
 
-Line 0: build-image version: 207bd4d38e2cd3af6515aa37c5942e41499b616a (noble-new-builds)
-Line 1: buildbot version: 420ff06ebdfb3fd8215b1a0a158ab916a07fe5a9
-Line 2: Fetching cached dependencies
-Line 3: Failed to fetch cache, continuing with build
-Line 4: Starting to prepare the repo for build
-Line 5: No cached dependencies found. Cloning fresh repo
-Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
-Line 7: Preparing Git Reference refs/heads/main
-Line 8: Installing dependencies
-Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
-Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
-Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
-Line 12: Attempting Node.js version '20.12.2' from .node-version
-Line 13: Downloading and installing node v20.12.2...
-Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
+Line 57: Next.js cache restored
+Line 58: [96m[1m​[22m[39m
+Line 59: [96m[1mBuild command from Netlify app                                [22m[39m
+Line 60: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 61: ​
+Line 62: [36m$ npm run build[39m
+Line 63: > cyber-altar@1.0.0 build
+Line 64: > next build
 Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 5.9s
-Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 69:  [37m[1m [22m[39m Collecting page data ...
-Line 70:  [37m[1m [22m[39m Generating static pages (0/9) ...
-Line 71:  [37m[1m [22m[39m Generating static pages (2/9)
-Line 72:  [37m[1m [22m[39m Generating static pages (4/9)
-Line 73:  [37m[1m [22m[39m Generating static pages (6/9)
-Line 74: Error occurred prerendering page "/prayer-wall". Read more: https://nextjs.org/docs/messages/prerender-error
-Line 75: Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
-Line 76:     at <unknown> (.next/server/chunks/968.js:37:47016)
-Line 77:     at new cg (.next/server/chunks/968.js:37:47198)
-Line 78:     at ch (.next/server/chunks/968.js:37:51145)
-Line 79:     at cy (.next/server/chunks/968.js:41:134)
-Line 80:     at f (.next/server/app/prayer-wall/page.js:1:1270)
-Line 81:     at stringify (<anonymous>) {
-Line 82:   digest: [32m'3444091986'[39m
-Line 83: }
-Line 84: Export encountered an error on /prayer-wall/page: /prayer-wall, exiting the build.
-Line 85:  [31m[1m⨯[22m[39m Next.js build worker exited with code: 1 and signal: null
-Line 86: [91m[1m​[22m[39m
-Line 87: [91m[1m"build.command" failed                                        [22m[39m
-Line 88: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 89: ​
-Line 90:   [31m[1mError message[22m[39m
-Line 91:   Command failed with exit code 1: npm run build
-Line 92: ​
-Line 93:   [31m[1mError location[22m[39m
-Line 94:   In Build command from Netlify app:
-Line 95:   npm run build
-Line 96: ​
-Line 97:   [31m[1mResolved config[22m[39m
-Line 98:   build:
-Line 99:     command: npm run build
-Line 100:     commandOrigin: ui
-Line 101:     environment:
-Line 102:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 103:       - NEXT_PUBLIC_SUPABASE_URL
-Line 104:     publish: /opt/build/repo/.next
-Line 105:     publishOrigin: ui
-Line 106:   plugins:
-Line 107:     - inputs: {}
-Line 108:       origin: ui
-Line 109:       package: "@netlify/plugin-nextjs"
-Line 110: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 111: Failing build: Failed to build site
-Line 112: Finished processing build request in 38.636s
+Line 67: [31mFailed to compile.
+Line 68: [39m
+Line 69: ./src/app/login/page.tsx
+Line 70: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/auth-card[39m'
+Line 71: https://nextjs.org/docs/messages/module-not-found
+Line 72: ./src/app/login/page.tsx
+Line 73: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/site-header[39m'
+Line 74: https://nextjs.org/docs/messages/module-not-found
+Line 75: > Build failed because of webpack errors
+Line 76: [91m[1m​[22m[39m
+Line 77: [91m[1m"build.command" failed                                        [22m[39m
+Line 78: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 79: ​
+Line 80:   [31m[1mError message[22m[39m
+Line 81:   Command failed with exit code 1: npm run build
+Line 82: ​
+Line 83:   [31m[1mError location[22m[39m
+Line 84:   In Build command from Netlify app:
+Line 85:   npm run build
+Line 86: ​
+Line 87:   [31m[1mResolved config[22m[39m
+Line 88:   build:
+Line 89:     command: npm run build
+Line 90:     commandOrigin: ui
+Line 91:     environment:
+Line 92:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 93:       - NEXT_PUBLIC_SUPABASE_URL
+Line 94:     publish: /opt/build/repo/.next
+Line 95:     publishOrigin: ui
+Line 96:   plugins:
+Line 97:     - inputs: {}
+Line 98:       origin: ui
+Line 99:       package: "@netlify/plugin-nextjs"
+Line 100: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 101: Failing build: Failed to build site
+Line 102: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 103: Finished processing build request in 21.334s
