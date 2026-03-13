@@ -2,24 +2,24 @@ The Netlify deploy errored, with the following guidance provided:
 
 **Diagnosis**
 
-- The build stops during type checking because [line 74](#L74-L79) reports `Type error: Module '"@/lib/supabase"' declares 'createClient' locally, but it is not exported.`  
-- The file `src/components/old/candle-panel.tsx` expects a named export `createClient` from `@/lib/supabase`, but the module only defines it locally (or exports it under a different name), so the import cannot be resolved.
+- The build fails during `next build` because TypeScript cannot resolve `./supabaseClient` imported from `src/lib/altarService.ts`. See [line 74](#L74-L80). No other errors prevent the build.
 
 **Solution**
 
-Export `createClient` from `src/lib/supabase.ts` (or whichever file `@/lib/supabase` resolves to), or change the import to match the actual export. For example, if `createClient` is currently only defined locally, update the Supabase helper file:
+1. Verify that `src/lib/supabaseClient.ts` (or the intended module) exists in the repository and is committed. If the module lives elsewhere, adjust the import path in `src/lib/altarService.ts` to point to the correct location (e.g., `../supabaseClient` or an alias configured in `tsconfig.json`).
+2. If the file is missing, recreate it with the expected Supabase client export, for example:
 
-```ts
-// src/lib/supabase.ts
-// ...
-export const createClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createBrowserClient(supabaseUrl, supabaseKey);
-};
-```
+   ```ts
+   // src/lib/supabaseClient.ts
+   import { createClient } from '@supabase/supabase-js';
 
-Keep the import in `src/components/old/candle-panel.tsx` as `import { createClient } from "@/lib/supabase";` (or adjust to the actual name if different). After exporting the function, rerun `npm run build` to verify the build succeeds.
+   export const supabase = createClient(
+     process.env.NEXT_PUBLIC_SUPABASE_URL!,
+     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+   );
+   ```
+
+3. Commit the file and redeploy.
 
 The relevant error logs are:
 
@@ -54,57 +54,55 @@ Line 66: > next build
 Line 67: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
 Line 68:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 69:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 70:  [32m[1m✓[22m[39m Compiled successfully in 5.4s
+Line 70:  [32m[1m✓[22m[39m Compiled successfully in 5.9s
 Line 71:  [37m[1m [22m[39m Linting and checking validity of types ...
 Line 72: [31mFailed to compile.
 Line 73: [39m
-Line 74: [36m./src/components/old/candle-panel.tsx[39m:[33m4[39m:[33m10[39m
-Line 75: [31m[1mType error[22m[39m: Module '"@/lib/supabase"' declares 'createClient' locally, but it is not exported.
-Line 76: [0m [90m 2 |[39m
-Line 77:  [90m 3 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m[33m;[39m
-Line 78: [31m[1m>[22m[39m[90m 4 |[39m [36mimport[39m { createClient } [36mfrom[39m [32m"@/lib/supabase"[39m[33m;[39m
-Line 79:  [90m   |[39m          [31m[1m^[22m[39m
-Line 80:  [90m 5 |[39m
-Line 81:  [90m 6 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mCandlePanel[39m({altarSlug}[33m:[39m{altarSlug[33
-Line 82:  [90m 7 |[39m[0m
-Line 83: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
-Line 84: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
-Line 85: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
-Line 86: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 87: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 88: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
-Line 89: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
-Line 90: [36m./src/components/cyber-altar/holyplace.tsx[39m
-Line 91: [33m49[39m:[33m11[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 92: [33m59[39m:[33m11[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 93: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
-Line 94: Next.js build worker exited with code: 1 and signal: null
-Line 95: [91m[1m​[22m[39m
-Line 96: [91m[1m"build.command" failed                                        [22m[39m
-Line 97: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 98: ​
-Line 99:   [31m[1mError message[22m[39m
-Line 100:   Command failed with exit code 1: npm run build
-Line 101: ​
-Line 102:   [31m[1mError location[22m[39m
-Line 103:   In Build command from Netlify app:
-Line 104:   npm run build
-Line 105: ​
-Line 106:   [31m[1mResolved config[22m[39m
-Line 107:   build:
-Line 108:     command: npm run build
-Line 109:     commandOrigin: ui
-Line 110:     environment:
-Line 111:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 112:       - NEXT_PUBLIC_SUPABASE_URL
-Line 113:       - SUPABASE_SERVICE_ROLE_KEY
-Line 114:     publish: /opt/build/repo/.next
-Line 115:     publishOrigin: ui
-Line 116:   plugins:
-Line 117:     - inputs: {}
-Line 118:       origin: ui
-Line 119:       package: "@netlify/plugin-nextjs"
-Line 120: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 121: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 122: Failing build: Failed to build site
-Line 123: Finished processing build request in 35.161s
+Line 74: [36m./src/lib/altarService.ts[39m:[33m1[39m:[33m26[39m
+Line 75: [31m[1mType error[22m[39m: Cannot find module './supabaseClient' or its corresponding type declarations.
+Line 76: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { supabase } [36mfrom[39m [32m"./supabaseClient"[39m
+Line 77:  [90m   |[39m                          [31m[1m^[22m[39m
+Line 78:  [90m 2 |[39m
+Line 79:  [90m 3 |[39m [36mexport[39m [36masync[39m [36mfunction[39m checkNicknameExists(nickname[33m:[39m string) {
+Line 80:  [90m 4 |[39m   [36mconst[39m { data[33m,[39m error } [33m=[39m [36mawait[39m supabase[0m
+Line 81: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
+Line 82: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 83: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
+Line 84: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 85: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 86: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
+Line 87: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 88: [36m./src/components/cyber-altar/holyplace.tsx[39m
+Line 89: [33m49[39m:[33m11[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 90: [33m59[39m:[33m11[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 91: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
+Line 92: Next.js build worker exited with code: 1 and signal: null
+Line 93: [91m[1m​[22m[39m
+Line 94: [91m[1m"build.command" failed                                        [22m[39m
+Line 95: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 96: ​
+Line 97:   [31m[1mError message[22m[39m
+Line 98:   Command failed with exit code 1: npm run build
+Line 99: ​
+Line 100:   [31m[1mError location[22m[39m
+Line 101:   In Build command from Netlify app:
+Line 102:   npm run build
+Line 103: ​
+Line 104:   [31m[1mResolved config[22m[39m
+Line 105:   build:
+Line 106:     command: npm run build
+Line 107:     commandOrigin: ui
+Line 108:     environment:
+Line 109:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 110:       - NEXT_PUBLIC_SUPABASE_URL
+Line 111:       - SUPABASE_SERVICE_ROLE_KEY
+Line 112:     publish: /opt/build/repo/.next
+Line 113:     publishOrigin: ui
+Line 114:   plugins:
+Line 115:     - inputs: {}
+Line 116:       origin: ui
+Line 117:       package: "@netlify/plugin-nextjs"
+Line 118: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 119: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 120: Failing build: Failed to build site
+Line 121: Finished processing build request in 38.154s
