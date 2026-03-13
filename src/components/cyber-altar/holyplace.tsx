@@ -9,6 +9,8 @@ type HolyPlaceProps = {
   candleHeightPercent: number
   remainingText: string
   loading: boolean
+  onLightCandle: () => void
+  onBack: () => void
 };
 
 export default function HolyPlace({
@@ -17,7 +19,9 @@ export default function HolyPlace({
   candleActive,
   candleHeightPercent,
   remainingText,
-  loading
+  loading,
+  onLightCandle,
+  onBack
 }: HolyPlaceProps) {
 
   return (
