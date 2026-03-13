@@ -2,19 +2,14 @@ The Netlify deploy errored, with the following guidance provided:
 
 **Diagnosis**
 
-- Next.js’ lint step fails because `react/no-unescaped-entities` detects an unescaped apostrophe in JSX at [`src/components/cyber-altar/holyplace.tsx#L46`](https://github.com/elyon27/cyber-altar/blob/main/src/components/cyber-altar/holyplace.tsx#L46), causing the build to exit with an error.
+- The build stopped during dependency installation because mise attempted to install `python@3.14.3`, which doesn’t exist. See [line 9](#L9). This invalid runtime version prevents toolchain setup, so the build never proceeds.
 
 **Solution**
 
-- Escape the apostrophe (or replace it with a typographic apostrophe) in that JSX node. For example:
+1. Update your runtime configuration (`.mise.toml`, `.tool-versions`, or whichever file in the repo specifies the Python version) to a real, supported release such as `python = "3.12.3"`.
+2. Commit the updated configuration to the repository and trigger a new Netlify build.
 
-```tsx
-<p>
-  Blessings flow from the altar &apos;round the clock.
-</p>
-```
-
-- Commit and push the change so the lint step passes on the next build.
+Once mise can install a valid Python version, the build should continue successfully.
 
 The relevant error logs are:
 
@@ -28,58 +23,3 @@ Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
 Line 7: Preparing Git Reference refs/heads/main
 Line 8: Installing dependencies
 Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
-Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
-Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
-Line 12: Attempting Node.js version '20.12.2' from .node-version
-Line 13: Downloading and installing node v20.12.2...
-Line 60: ​
-Line 61: [36m$ npm run build[39m
-Line 62: > cyber-altar@1.0.0 build
-Line 63: > next build
-Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
-Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
-Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 5.8s
-Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 69: [31m
-Line 70: Failed to compile.[39m
-Line 71: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
-Line 72: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
-Line 73: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
-Line 74: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 75: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 76: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
-Line 77: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
-Line 78: [36m./src/components/cyber-altar/holyplace.tsx[39m
-Line 79: [33m46[39m:[33m23[39m  [31m[1mError[22m[39m: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  [90m[1m
-Line 80: [33m51[39m:[33m11[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 81: [33m61[39m:[33m11[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 82: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
-Line 83: [91m[1m​[22m[39m
-Line 84: [91m[1m"build.command" failed                                        [22m[39m
-Line 85: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 86: ​
-Line 87:   [31m[1mError message[22m[39m
-Line 88:   Command failed with exit code 1: npm run build
-Line 89: ​
-Line 90:   [31m[1mError location[22m[39m
-Line 91:   In Build command from Netlify app:
-Line 92:   npm run build
-Line 93: ​
-Line 94:   [31m[1mResolved config[22m[39m
-Line 95:   build:
-Line 96:     command: npm run build
-Line 97:     commandOrigin: ui
-Line 98:     environment:
-Line 99:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 100:       - NEXT_PUBLIC_SUPABASE_URL
-Line 101:       - SUPABASE_SERVICE_ROLE_KEY
-Line 102:     publish: /opt/build/repo/.next
-Line 103:     publishOrigin: ui
-Line 104:   plugins:
-Line 105:     - inputs: {}
-Line 106:       origin: ui
-Line 107:       package: "@netlify/plugin-nextjs"
-Line 108: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 109: Failing build: Failed to build site
-Line 110: Finished processing build request in 35.644s
