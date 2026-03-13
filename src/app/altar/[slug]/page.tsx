@@ -1,15 +1,16 @@
-import AltarSelectionForm from "@/components/cyber-altar/Altar-Selection-Form";
+import type { PageProps } from "next";
 
-type Props = {
-  params: {
-    slug: string;
-  };
+type Params = {
+  slug: string;
 };
 
-export default function Page({ params }: Props) {
+export default async function AltarPage({ params }: PageProps<Params>) {
+  const { slug } = await params;
+
   return (
-    <main className="min-h-screen bg-blue-950 px-4 py-10">
-      <AltarSelectionForm slug={params.slug} nickname={params.slug} />
-    </main>
+    <div>
+      <h1>Cyber Altar</h1>
+      <p>Pilgrim: {slug}</p>
+    </div>
   );
 }
