@@ -3,10 +3,11 @@
 import Image from "next/image";
 
 type HolyPlaceProps = {
-  currentUser: any
-  nickname: string;
-  prayer: string;
-  altarImage: string;
+  currentUser: UserRecord
+  crossImage: string
+  candleActive: boolean
+  candleHeightPercent: number
+  remainingText: string
 };
 
 export default function HolyPlace({
@@ -14,11 +15,7 @@ export default function HolyPlace({
   prayer,
   altarImage,
 }: HolyPlaceProps) {
-  currentUser: any
-  crossImage: string
-  candleActive: boolean
-  candleHeightPercent: number
-  
+ 
   return (
     <main className="min-h-screen bg-blue-950 px-4 py-10 text-white">
       <div className="mx-auto max-w-6xl rounded-3xl border border-blue-700/60 bg-blue-900/40 p-6 shadow-2xl backdrop-blur md:p-10">
