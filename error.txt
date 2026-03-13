@@ -1,11 +1,12 @@
 The Netlify deploy errored, with the following guidance provided:
 
-- Diagnosis  
-  - The build stops at [lines 69-72](#L69-L72) because webpack cannot resolve the import `@/components/cyber-altar/HolyPlace` inside `src/components/cyber-altar/PrayerClient.tsx`. This indicates a path/casing mismatch or missing file for that module when the project is compiled on Netlify’s case-sensitive Linux filesystem.
+Diagnosis  
+- The build stops at the TypeScript step because `CyberAltarPage.tsx` imports `{ HolyPlace }` from `components/cyber-altar/holyplace`, but that file doesn’t export a member with that name. See [line 71](#L71).
 
-- Solution  
-  - Verify that the component (e.g. `src/components/cyber-altar/HolyPlace.tsx` or `src/components/cyber-altar/HolyPlace/index.tsx`) is committed to the repository and that its path matches the import exactly, including letter casing.  
-  - If the actual file name or directory differs (for example `holyPlace.tsx`, `Holyplace.tsx`, or a different folder name), update the import in `src/components/cyber-altar/PrayerClient.tsx` to match the real path and commit the change.
+Solution  
+- Open `src/components/cyber-altar/holyplace.tsx` and check how the component is exported. If it has a default export (for example `export default HolyPlace;`), replace the import in `src/components/cyber-altar/CyberAltarPage.tsx` with `import HolyPlace from '@/components/cyber-altar/holyplace';`.  
+- If the file exports a differently named symbol (e.g. `export const HolyPlaceSection = ...;`), update the import to match that exact name (`import { HolyPlaceSection } from ...`) and adjust the usage accordingly.  
+- Commit the change and rerun the Netlify build.
 
 The relevant error logs are:
 
@@ -23,8 +24,6 @@ Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
 Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
 Line 12: Attempting Node.js version '20.12.2' from .node-version
 Line 13: Downloading and installing node v20.12.2...
-Line 57: [96m[1m​[22m[39m
-Line 58: [96m[1mBuild command from Netlify app                                [22m[39m
 Line 59: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
 Line 60: ​
 Line 61: [36m$ npm run build[39m
@@ -33,38 +32,54 @@ Line 63: > next build
 Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
 Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67: [31mFailed to compile.
-Line 68: [39m
-Line 69: ./src/components/cyber-altar/PrayerClient.tsx
-Line 70: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/cyber-altar/HolyPlace[39m'
-Line 71: https://nextjs.org/docs/messages/module-not-found
-Line 72: > Build failed because of webpack errors
-Line 73: [91m[1m​[22m[39m
-Line 74: [91m[1m"build.command" failed                                        [22m[39m
-Line 75: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 76: ​
-Line 77:   [31m[1mError message[22m[39m
-Line 78:   Command failed with exit code 1: npm run build
-Line 79: ​
-Line 80:   [31m[1mError location[22m[39m
-Line 81:   In Build command from Netlify app:
-Line 82:   npm run build
-Line 83: ​
-Line 84:   [31m[1mResolved config[22m[39m
-Line 85:   build:
-Line 86:     command: npm run build
-Line 87:     commandOrigin: ui
-Line 88:     environment:
-Line 89:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 90:       - NEXT_PUBLIC_SUPABASE_URL
-Line 91:       - SUPABASE_SERVICE_ROLE_KEY
-Line 92:     publish: /opt/build/repo/.next
-Line 93:     publishOrigin: ui
-Line 94:   plugins:
-Line 95:     - inputs: {}
-Line 96:       origin: ui
-Line 97:       package: "@netlify/plugin-nextjs"
-Line 98: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 99: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 100: Failing build: Failed to build site
-Line 101: Finished processing build request in 1m7.794s
+Line 67:  [32m[1m✓[22m[39m Compiled successfully in 5.8s
+Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
+Line 69: [31mFailed to compile.
+Line 70: [39m
+Line 71: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m15[39m:[33m10[39m
+Line 72: [31m[1mType error[22m[39m: Module '"@/components/cyber-altar/holyplace"' has no exported member 'HolyPlace'. Did you mean to
+Line 73: [0m [90m 13 |[39m [36mimport[39m { [33mSigninForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/signinform'[39m[3
+Line 74:  [90m 14 |[39m [36mimport[39m { [33mAltarForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/altarform'[39m[33m;[3
+Line 75: [31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mHolyPlace[39m } [36mfrom[39m [32m'@/components/cyber-altar/holyp
+Line 76:  [90m    |[39m          [31m[1m^[22m[39m
+Line 77:  [90m 16 |[39m
+Line 78:  [90m 17 |[39m [36mconst[39m [33mSESSION_KEY[39m [33m=[39m [32m'cyber-altar-session-nickname'[39m[33m;[39m
+Line 79:  [90m 18 |[39m[0m
+Line 80: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
+Line 81: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 82: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
+Line 83: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 84: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 85: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
+Line 86: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 87: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
+Line 88: Next.js build worker exited with code: 1 and signal: null
+Line 89: [91m[1m​[22m[39m
+Line 90: [91m[1m"build.command" failed                                        [22m[39m
+Line 91: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 92: ​
+Line 93:   [31m[1mError message[22m[39m
+Line 94:   Command failed with exit code 1: npm run build
+Line 95: ​
+Line 96:   [31m[1mError location[22m[39m
+Line 97:   In Build command from Netlify app:
+Line 98:   npm run build
+Line 99: ​
+Line 100:   [31m[1mResolved config[22m[39m
+Line 101:   build:
+Line 102:     command: npm run build
+Line 103:     commandOrigin: ui
+Line 104:     environment:
+Line 105:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 106:       - NEXT_PUBLIC_SUPABASE_URL
+Line 107:       - SUPABASE_SERVICE_ROLE_KEY
+Line 108:     publish: /opt/build/repo/.next
+Line 109:     publishOrigin: ui
+Line 110:   plugins:
+Line 111:     - inputs: {}
+Line 112:       origin: ui
+Line 113:       package: "@netlify/plugin-nextjs"
+Line 114: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 115: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 116: Failing build: Failed to build site
+Line 117: Finished processing build request in 34.341s
