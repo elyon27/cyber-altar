@@ -12,7 +12,7 @@ import { MainMenu } from '@/components/cyber-altar/mainmenu';
 import { SignupForm } from '@/components/cyber-altar/signupform';
 import { SigninForm } from '@/components/cyber-altar/signinform';
 import { AltarForm } from '@/components/cyber-altar/altarform';
-import { HolyPlace } from '@/components/cyber-altar/holyplace';
+import HolyPlace from '@/components/cyber-altar/holyplace';
 
 const SESSION_KEY = 'cyber-altar-session-nickname';
 

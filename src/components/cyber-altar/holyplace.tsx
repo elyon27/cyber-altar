@@ -7,10 +7,10 @@ type HolyPlaceProps = {
   crossImage: string
   candleActive: boolean
   candleHeightPercent: number
-  setCandleHeightPercent: React.Dispatch<React.SetStateAction<number>>
-  handlePrayerSelect: (prayer: Prayer) => void
-  selectedPrayer: Prayer | null
-  prayers: Prayer[]
+  remainingText: string
+  loading: boolean
+  onLightCandle: () => void
+  onBack: () => void
 };
 
 export default function HolyPlace({
@@ -18,10 +18,10 @@ export default function HolyPlace({
   crossImage,
   candleActive,
   candleHeightPercent,
-  setCandleHeightPercent,
-  handlePrayerSelect,
-  selectedPrayer,
-  prayers
+  remainingText,
+  loading,
+  onLightCandle,
+  onBack
 }: HolyPlaceProps) {
 
   return (

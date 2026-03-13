@@ -2,48 +2,24 @@ The Netlify deploy errored, with the following guidance provided:
 
 **Diagnosis**
 
-- The build fails during `next build` because of a TypeScript compilation error at [`CyberAltarPage.tsx#L282`](https://github.com/elyon27/cyber-altar/blob/main/src/components/cyber-altar/CyberAltarPage.tsx#L282). The props you pass to `<HolyPlace />` (`currentUser`, `crossImage`, `candleActive`, `candleHeightPercent`, `setCandleHeightPercent`, `handlePrayerSelect`, `selectedPrayer`, and `prayers`) do not match the props interface exported by `HolyPlace`. This mismatch causes TypeScript to stop the build ([log #L80-L89](#L80-L89)).
+- The TypeScript compiler stopped the Next.js build because `HolyPlace` was rendered with a `remainingText` prop that its props interface doesn’t define. See [line 79](#L79): `Property 'remainingText' does not exist on type 'IntrinsicAttributes & HolyPlaceProps'.`
 
 **Solution**
 
-1. Open [`HolyPlace.tsx`](https://github.com/elyon27/cyber-altar/blob/main/src/components/cyber-altar/HolyPlace.tsx) and update its props definition so it includes every prop that `CyberAltarPage` passes. For example:
+- Update the `HolyPlaceProps` interface (in `src/components/cyber-altar/Holy-Place.tsx`) to include the `remainingText` field with the correct type, e.g.:
 
-   ```ts
-   // src/components/cyber-altar/HolyPlace.tsx
-   export type HolyPlaceProps = {
-     currentUser: UserRecord | null;
-     crossImage: string;
-     candleActive: boolean;
-     candleHeightPercent: number;
-     setCandleHeightPercent: React.Dispatch<React.SetStateAction<number>>;
-     handlePrayerSelect: (prayer: Prayer) => void;
-     selectedPrayer: Prayer | null;
-     prayers: Prayer[];
-   };
-   ```
+  ```ts
+  interface HolyPlaceProps {
+    // existing props…
+    remainingText: string; // adjust type as needed
+  }
+  ```
 
-   Adjust the types (`Prayer`, `UserRecord`, etc.) to match the actual types used in your project.
+  Then ensure the component uses that prop appropriately.
 
-2. Ensure the `HolyPlace` component signature uses that interface:
+- Alternatively, if `HolyPlace` shouldn’t accept `remainingText`, remove the prop from the JSX in `src/components/cyber-altar/CyberAltarPage.tsx` so that the component is only passed fields defined in `HolyPlaceProps`.
 
-   ```ts
-   const HolyPlace: React.FC<HolyPlaceProps> = ({
-     currentUser,
-     crossImage,
-     candleActive,
-     candleHeightPercent,
-     setCandleHeightPercent,
-     handlePrayerSelect,
-     selectedPrayer,
-     prayers,
-   }) => {
-     // ...
-   };
-   ```
-
-3. If any accessor names or types differ (for example, if `setCandleHeightPercent` should accept a number rather than a setter), either update the interface accordingly or modify the props you pass from `CyberAltarPage` to match the existing interface.
-
-After aligning the `HolyPlace` prop types with the values supplied in `CyberAltarPage`, rerun the Netlify build; the TypeScript compiler should succeed, allowing the build to complete.
+Re-run the build after aligning the component’s interface with the props you pass.
 
 The relevant error logs are:
 
@@ -61,36 +37,28 @@ Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
 Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
 Line 12: Attempting Node.js version '20.12.2' from .node-version
 Line 13: Downloading and installing node v20.12.2...
-Line 59: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 60: ​
-Line 61: [36m$ npm run build[39m
-Line 62: > cyber-altar@1.0.0 build
-Line 63: > next build
-Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
-Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
-Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.6s
+Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.4s
 Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 69: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 70: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
-Line 71: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
-Line 72: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
-Line 73: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 74: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 75: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
-Line 76: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
-Line 77: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
-Line 78: [31mFailed to compile.
-Line 79: [39m
-Line 80: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m282[39m:[33m12[39m
-Line 81: [31m[1mType error[22m[39m: Type '{ currentUser: UserRecord; crossImage: string; candleActive: boolean; candleHeightPercent: 
-Line 82: [0m [90m 280 |[39m
-Line 83:  [90m 281 |[39m         {screen [33m===[39m [32m'holyPlace'[39m [33m&&[39m currentUser [33m&&[39m (
-Line 84: [31m[1m>[22m[39m[90m 282 |[39m           [33m<[39m[33mHolyPlace[39m
-Line 85:  [90m     |[39m            [31m[1m^[22m[39m
-Line 86:  [90m 283 |[39m             currentUser[33m=[39m{currentUser}
-Line 87:  [90m 284 |[39m             crossImage[33m=[39m{[33mCROSS_IMAGE[39m}
-Line 88:  [90m 285 |[39m             candleActive[33m=[39m{candleActive}[0m
+Line 69: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
+Line 70: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 71: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
+Line 72: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 73: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 74: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
+Line 75: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 76: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
+Line 77: [31mFailed to compile.
+Line 78: [39m
+Line 79: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m287[39m:[33m13[39m
+Line 80: [31m[1mType error[22m[39m: Type '{ currentUser: UserRecord; crossImage: string; candleActive: boolean; candleHeightPercent: 
+Line 81:   Property 'remainingText' does not exist on type 'IntrinsicAttributes & HolyPlaceProps'.
+Line 82: [0m [90m 285 |[39m             candleActive[33m=[39m{candleActive}
+Line 83:  [90m 286 |[39m             candleHeightPercent[33m=[39m{candleHeightPercent}
+Line 84: [31m[1m>[22m[39m[90m 287 |[39m             remainingText[33m=[39m{remainingText}
+Line 85:  [90m     |[39m             [31m[1m^[22m[39m
+Line 86:  [90m 288 |[39m             loading[33m=[39m{loading}
+Line 87:  [90m 289 |[39m             onLightCandle[33m=[39m{handleLightCandle}
+Line 88:  [90m 290 |[39m             onBack[33m=[39m{resetForMenu}[0m
 Line 89: Next.js build worker exited with code: 1 and signal: null
 Line 90: [91m[1m​[22m[39m
 Line 91: [91m[1m"build.command" failed                                        [22m[39m
@@ -119,4 +87,4 @@ Line 113:       origin: ui
 Line 114:       package: "@netlify/plugin-nextjs"
 Line 115: Build failed due to a user error: Build script returned non-zero exit code: 2
 Line 116: Failing build: Failed to build site
-Line 117: Finished processing build request in 36.497s
+Line 117: Finished processing build request in 37.208s
