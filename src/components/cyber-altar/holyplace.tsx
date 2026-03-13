@@ -3,6 +3,7 @@
 import Image from "next/image";
 
 type HolyPlaceProps = {
+  currentUser: any
   nickname: string;
   prayer: string;
   altarImage: string;

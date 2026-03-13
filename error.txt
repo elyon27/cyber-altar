@@ -2,24 +2,24 @@ The Netlify deploy errored, with the following guidance provided:
 
 **Diagnosis**
 
-The build fails during Next.js type checking because `HolyPlace` is rendered with a `currentUser` prop, but that prop is missing from `HolyPlaceProps`. See [log lines #L71-L80](#L71-L80); TypeScript raises “Property 'currentUser' does not exist on type 'IntrinsicAttributes & HolyPlaceProps'.”
+- The build fails during the Next.js type check because `HolyPlace` is rendered with a `currentUser` prop, but that prop is not declared in `HolyPlaceProps`. See [CyberAltarPage.tsx#L283-L286](https://github.com/elyon27/cyber-altar/blob/main/src/components/cyber-altar/CyberAltarPage.tsx#L283-L286), which produces the compiler error reported at [build log #L71-L80](#L71-L80).
 
 **Solution**
 
-Update the `HolyPlace` component’s props definition (in `src/components/cyber-altar/HolyPlace.tsx`) so that it explicitly declares a `currentUser` prop matching how it’s used in `CyberAltarPage.tsx`. For example:
+- Update `HolyPlaceProps` in `src/components/cyber-altar/HolyPlace.tsx` so it includes the `currentUser` property (matching the type you pass, e.g., `UserRecord | null`). Also add the corresponding import if it isn’t present. For example:
 
-```ts
-// src/components/cyber-altar/HolyPlace.tsx
-export interface HolyPlaceProps {
-  currentUser: UserRecord; // or UserRecord | null, depending on your logic
-  crossImage: string;
-  candleActive: boolean;
-  candleHeightPercent: number;
-  // ...other props already defined
-}
-```
+  ```ts
+  import { UserRecord } from '@supabase/supabase-js';
 
-(or adjust the type to `UserRecord | null` if the component should accept a nullable user). After updating the interface/props type, commit the change and rerun `npm run build`; TypeScript should compile successfully.
+  type HolyPlaceProps = {
+    currentUser: UserRecord | null;
+    crossImage: string;
+    candleActive: boolean;
+    candleHeightPercent: number;
+  };
+  ```
+
+- Adjust the component implementation if it needs to handle `null` values accordingly. After committing this change, rerun the build.
 
 The relevant error logs are:
 
@@ -45,7 +45,7 @@ Line 63: > next build
 Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
 Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 5.0s
+Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.2s
 Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
 Line 69: [31mFailed to compile.
 Line 70: [39m
@@ -87,5 +87,4 @@ Line 105:       origin: ui
 Line 106:       package: "@netlify/plugin-nextjs"
 Line 107: Build failed due to a user error: Build script returned non-zero exit code: 2
 Line 108: Failing build: Failed to build site
-Line 109: Finished processing build request in 31.719s
-Line 110: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 109: Finished processing build request in 37.013s
