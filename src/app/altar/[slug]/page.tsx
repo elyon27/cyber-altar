@@ -1,11 +1,15 @@
 import CyberAltarPage from "@/components/cyber-altar/CyberAltarPage";
 
-type PageProps = {
-  params: {
-    slug: string;
-  };
+type PageParams = {
+  slug: string;
 };
 
-export default function AltarPage({ params }: PageProps) {
-  return <CyberAltarPage slug={params.slug} />;
+export default async function Page({
+  params,
+}: {
+  params: Promise<PageParams>;
+}) {
+  const { slug } = await params;
+
+  return <CyberAltarPage slug={slug} />;
 }
