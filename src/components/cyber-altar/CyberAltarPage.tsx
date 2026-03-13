@@ -9,7 +9,7 @@ import { ALTAR_IMAGES, CANDLE_DURATION_MS, CROSS_IMAGE } from '@/components/cybe
 import { formatRemaining } from '@/components/cyber-altar/utils';
 import SiteHeader from '@/components/cyber-altar/SiteHeader';
 import { MainMenu } from '@/components/cyber-altar/MainMenu';
-import { SignupForm } from '@/components/cyber-altar/SignupForm';
+import { SignupForm } from '@/components/cyber-altar/SignUpForm';
 import { SigninForm } from '@/components/cyber-altar/SigninForm';
 import { AltarForm } from '@/components/cyber-altar/AltarForm';
 import { HolyPlace } from '@/components/cyber-altar/HolyPlace';
