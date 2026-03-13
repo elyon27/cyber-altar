@@ -8,14 +8,18 @@ type HolyPlaceProps = {
   candleActive: boolean
   candleHeightPercent: number
   remainingText: string
+  loading: boolean
 };
 
 export default function HolyPlace({
-  nickname,
-  prayer,
-  altarImage,
+  currentUser,
+  crossImage,
+  candleActive,
+  candleHeightPercent,
+  remainingText,
+  loading
 }: HolyPlaceProps) {
- 
+
   return (
     <main className="min-h-screen bg-blue-950 px-4 py-10 text-white">
       <div className="mx-auto max-w-6xl rounded-3xl border border-blue-700/60 bg-blue-900/40 p-6 shadow-2xl backdrop-blur md:p-10">
