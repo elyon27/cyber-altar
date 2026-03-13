@@ -1,75 +1,86 @@
-   ▲ Next.js 15.5.12
-   - Local:        http://localhost:3000
-   - Network:      http://192.168.1.100:3000
-   - Environments: .env.local
+The Netlify deploy errored, with the following guidance provided:
 
- ✓ Starting...
- ✓ Ready in 7s
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- ○ Compiling / ...
- ⨯ ./app/page.tsx:1:1
-Module not found: Can't resolve '@/components/altar-scene'
-> 1 | import { AltarScene } from "@/components/altar-scene";
-    | ^
-  2 | import { AuthCard } from "@/components/auth-card";
-  3 | import { SiteHeader } from "@/components/site-header";
-  4 |
+**Diagnosis**
 
-https://nextjs.org/docs/messages/module-not-found
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- ⨯ ./app/page.tsx:1:1
-Module not found: Can't resolve '@/components/altar-scene'
-> 1 | import { AltarScene } from "@/components/altar-scene";
-    | ^
-  2 | import { AuthCard } from "@/components/auth-card";
-  3 | import { SiteHeader } from "@/components/site-header";
-  4 |
+- Next.js build fails with a webpack “Module not found” error: [`src/app/prayer-wall/page.tsx`](#L69-L72) tries to import `@/lib/supabase`, but webpack cannot resolve that path.
 
-https://nextjs.org/docs/messages/module-not-found
- ⨯ ./app/page.tsx:1:1
-Module not found: Can't resolve '@/components/altar-scene'
-> 1 | import { AltarScene } from "@/components/altar-scene";
-    | ^
-  2 | import { AuthCard } from "@/components/auth-card";
-  3 | import { SiteHeader } from "@/components/site-header";
-  4 |
+**Solution**
 
-https://nextjs.org/docs/messages/module-not-found
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\DumpStack.log.tmp'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\System Volume Information'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\pagefile.sys'
-Watchpack Error (initial scan): Error: EINVAL: invalid argument, lstat 'c:\swapfile.sys'
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- ⨯ ./app/page.tsx:1:1
-Module not found: Can't resolve '@/components/altar-scene'
-> 1 | import { AltarScene } from "@/components/altar-scene";
-    | ^
-  2 | import { AuthCard } from "@/components/auth-card";
-  3 | import { SiteHeader } from "@/components/site-header";
-  4 |
+1. Verify that the Supabase helper file is committed to the repo. If the file exists, it should be at `src/lib/supabase.ts` (or `.js/.tsx`). If it’s missing, add it back or recreate it with the expected Supabase client code.
+2. If the file exists under a different name or directory (e.g., `src/lib/supabaseClient.ts`), update the import in `src/app/prayer-wall/page.tsx` to point to the actual path, such as:
+   ```tsx
+   import { createSupabaseClient } from '@/lib/supabaseClient';
+   ```
+3. Ensure the `@/*` path alias is configured. In `tsconfig.json` (or `jsconfig.json`), add paths if they’re missing:
+   ```json
+   {
+     "compilerOptions": {
+       "baseUrl": ".",
+       "paths": {
+         "@/*": ["src/*"]
+       }
+     }
+   }
+   ```
+   Next.js will then resolve `@/lib/supabase` to `src/lib/supabase`.
 
-https://nextjs.org/docs/messages/module-not-found
+The relevant error logs are:
+
+Line 0: build-image version: 207bd4d38e2cd3af6515aa37c5942e41499b616a (noble-new-builds)
+Line 1: buildbot version: 420ff06ebdfb3fd8215b1a0a158ab916a07fe5a9
+Line 2: Fetching cached dependencies
+Line 3: Failed to fetch cache, continuing with build
+Line 4: Starting to prepare the repo for build
+Line 5: No cached dependencies found. Cloning fresh repo
+Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
+Line 7: Preparing Git Reference refs/heads/main
+Line 8: Installing dependencies
+Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
+Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
+Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
+Line 12: Attempting Node.js version '20.12.2' from .node-version
+Line 13: Downloading and installing node v20.12.2...
+Line 57: [96m[1m​[22m[39m
+Line 58: [96m[1mBuild command from Netlify app                                [22m[39m
+Line 59: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 60: ​
+Line 61: [36m$ npm run build[39m
+Line 62: > cyber-altar@1.0.0 build
+Line 63: > next build
+Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
+Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
+Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
+Line 67: [31mFailed to compile.
+Line 68: [39m
+Line 69: ./src/app/prayer-wall/page.tsx
+Line 70: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/lib/supabase[39m'
+Line 71: https://nextjs.org/docs/messages/module-not-found
+Line 72: > Build failed because of webpack errors
+Line 73: [91m[1m​[22m[39m
+Line 74: [91m[1m"build.command" failed                                        [22m[39m
+Line 75: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 76: ​
+Line 77:   [31m[1mError message[22m[39m
+Line 78:   Command failed with exit code 1: npm run build
+Line 79: ​
+Line 80:   [31m[1mError location[22m[39m
+Line 81:   In Build command from Netlify app:
+Line 82:   npm run build
+Line 83: ​
+Line 84:   [31m[1mResolved config[22m[39m
+Line 85:   build:
+Line 86:     command: npm run build
+Line 87:     commandOrigin: ui
+Line 88:     environment:
+Line 89:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 90:       - NEXT_PUBLIC_SUPABASE_URL
+Line 91:     publish: /opt/build/repo/.next
+Line 92:     publishOrigin: ui
+Line 93:   plugins:
+Line 94:     - inputs: {}
+Line 95:       origin: ui
+Line 96:       package: "@netlify/plugin-nextjs"
+Line 97: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 98: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 99: Failing build: Failed to build site
+Line 100: Finished processing build request in 27.244s
