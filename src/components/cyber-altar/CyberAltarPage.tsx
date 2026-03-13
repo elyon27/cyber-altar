@@ -10,9 +10,9 @@ import { formatRemaining } from '@/components/cyber-altar/utils';
 import SiteHeader from '@/components/cyber-altar/SiteHeader';
 import { MainMenu } from '@/components/cyber-altar/MainMenu';
 import { SignupForm } from '@/components/cyber-altar/SignUpForm';
-import { SigninForm } from '@/components/cyber-altar/SignInForm';
+import { SigninForm } from '@/components/cyber-altar/SigninForm';
 import { AltarForm } from '@/components/cyber-altar/AltarForm';
-import { HolyPlace } from '@/components/cyber-altar/HolyPlace';
+import HolyPlace from '@/components/cyber-altar/HolyPlace';
 
 const SESSION_KEY = 'cyber-altar-session-nickname';
 

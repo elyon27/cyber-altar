@@ -1,22 +1,15 @@
 The Netlify deploy errored, with the following guidance provided:
 
-**Diagnosis**
+- Diagnosis  
+  - The build stopped during the TypeScript check because `src/components/cyber-altar/CyberAltarPage.tsx` imports a named export that does not exist. See the compiler message on [lines 71-77](#L71-L77): `@/components/cyber-altar/HolyPlace` does not export `HolyPlace`.
 
-- The build stops at the type-checking step because Next.js can’t resolve the module `@/components/cyber-altar/SignupForm` that is imported in `src/components/cyber-altar/CyberAltarPage.tsx`. See the compiler error in the build log at [lines 79-87](#L79-L87).
-
-**Solution**
-
-1. Confirm which filename actually exists under `src/components/cyber-altar/`—for example `SignUpForm.tsx`, `Signupform.tsx`, or similar—and that it exports `SignupForm`.
-2. Fix the broken import so the path and casing match the real file. For instance, if the file is named `SignUpForm.tsx`, update the import in `src/components/cyber-altar/CyberAltarPage.tsx`:
-
-   ```tsx
-   // src/components/cyber-altar/CyberAltarPage.tsx
-   import { SignupForm } from '@/components/cyber-altar/SignUpForm';
-   ```
-
-3. If the file is missing entirely, add (and export) the `SignupForm` component in `src/components/cyber-altar/SignupForm.tsx` and commit it.
-
-After correcting the import or adding the missing component, rerun the Netlify build.
+- Solution  
+  - Inspect [`src/components/cyber-altar/HolyPlace.tsx`](https://github.com/elyon27/cyber-altar/blob/main/src/components/cyber-altar/HolyPlace.tsx) and confirm how the component is exported.  
+  - If it is the default export (`export default function HolyPlace() { ... }`), update `src/components/cyber-altar/CyberAltarPage.tsx` to use a default import:  
+    ```tsx
+    import HolyPlace from '@/components/cyber-altar/HolyPlace';
+    ```  
+  - Alternatively, if you intended to use a named export, add `export const HolyPlace = ...` (or `export { HolyPlace }`) inside `HolyPlace.tsx` and keep the named import consistent. After aligning the import/export, rerun the build.
 
 The relevant error logs are:
 
@@ -29,3 +22,66 @@ Line 5: No cached dependencies found. Cloning fresh repo
 Line 6: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
 Line 7: Preparing Git Reference refs/heads/main
 Line 8: Installing dependencies
+Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
+Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
+Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
+Line 12: Attempting Node.js version '20.12.2' from .node-version
+Line 13: Downloading and installing node v20.12.2...
+Line 59: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 60: ​
+Line 61: [36m$ npm run build[39m
+Line 62: > cyber-altar@1.0.0 build
+Line 63: > next build
+Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
+Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
+Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
+Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.0s
+Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
+Line 69: [31mFailed to compile.
+Line 70: [39m
+Line 71: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m15[39m:[33m10[39m
+Line 72: [31m[1mType error[22m[39m: Module '"@/components/cyber-altar/HolyPlace"' has no exported member 'HolyPlace'. Did you mean to
+Line 73: [0m [90m 13 |[39m [36mimport[39m { [33mSigninForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/SignInForm'[39m[3
+Line 74:  [90m 14 |[39m [36mimport[39m { [33mAltarForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/AltarForm'[39m[33m;[3
+Line 75: [31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mHolyPlace[39m } [36mfrom[39m [32m'@/components/cyber-altar/HolyP
+Line 76:  [90m    |[39m          [31m[1m^[22m[39m
+Line 77:  [90m 16 |[39m
+Line 78:  [90m 17 |[39m [36mconst[39m [33mSESSION_KEY[39m [33m=[39m [32m'cyber-altar-session-nickname'[39m[33m;[39m
+Line 79:  [90m 18 |[39m[0m
+Line 80: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
+Line 81: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 82: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
+Line 83: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 84: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 85: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
+Line 86: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 87: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
+Line 88: Next.js build worker exited with code: 1 and signal: null
+Line 89: [91m[1m​[22m[39m
+Line 90: [91m[1m"build.command" failed                                        [22m[39m
+Line 91: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 92: ​
+Line 93:   [31m[1mError message[22m[39m
+Line 94:   Command failed with exit code 1: npm run build
+Line 95: ​
+Line 96:   [31m[1mError location[22m[39m
+Line 97:   In Build command from Netlify app:
+Line 98:   npm run build
+Line 99: ​
+Line 100:   [31m[1mResolved config[22m[39m
+Line 101:   build:
+Line 102:     command: npm run build
+Line 103:     commandOrigin: ui
+Line 104:     environment:
+Line 105:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 106:       - NEXT_PUBLIC_SUPABASE_URL
+Line 107:       - SUPABASE_SERVICE_ROLE_KEY
+Line 108:     publish: /opt/build/repo/.next
+Line 109:     publishOrigin: ui
+Line 110:   plugins:
+Line 111:     - inputs: {}
+Line 112:       origin: ui
+Line 113:       package: "@netlify/plugin-nextjs"
+Line 114: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 115: Failing build: Failed to build site
+Line 116: Finished processing build request in 34.766s
