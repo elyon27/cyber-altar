@@ -117,4 +117,5 @@ const HolyPlace: React.FC<HolyPlaceProps> = ({
       </div>
     </main>
   );
+  export default HolyPlace;
 }

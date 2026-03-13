@@ -1,21 +1,18 @@
 The Netlify deploy errored, with the following guidance provided:
 
-Diagnosis:  
-- [log #L72-L81](#L72-L81) shows the TypeScript compilation failed because `PrayerClient.tsx` passes the props `nickname`, `prayer`, and `altarImage` to `<HolyPlace>`, but `HolyPlaceProps` does not declare these fields. The Next.js build stops during the type-checking stage, so the deploy exits with code 1.
+**Diagnosis**
 
-Solution:  
-- Update the props definition for the `HolyPlace` component so `HolyPlaceProps` matches the props being passed. For example, in `src/components/cyber-altar/HolyPlace.tsx`, ensure the interface (or type) includes `nickname`, `prayer`, and `altarImage`:
+- The build fails because `src/components/cyber-altar/holyplace.tsx` does not export a default member, yet `CyberAltarPage.tsx` and `PrayerClient.tsx` import it as a default. See the attempted default import reported in [line 94](#L94) and the TypeScript error in [line 91](#L91).
+
+**Solution**
+
+Update the imports to match the module’s actual exports. For example, if the component is exported as a named export, change the usages to:
 
 ```ts
-interface HolyPlaceProps {
-  nickname: string;
-  prayer: string;
-  altarImage: string;
-  // …any existing props
-}
+import { HolyPlace } from '@/components/cyber-altar/holyplace';
 ```
 
-- Re-run `npm run build` locally to confirm the TypeScript check succeeds before pushing.
+Do this in `src/components/cyber-altar/CyberAltarPage.tsx` and anywhere else that currently uses `import HolyPlace from '@/components/cyber-altar/holyplace';`. Alternatively, if a default export is preferred, add `export default HolyPlace;` to `src/components/cyber-altar/holyplace.tsx`.
 
 The relevant error logs are:
 
@@ -41,47 +38,64 @@ Line 63: > next build
 Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
 Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.5s
-Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 69: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 70: [31mFailed to compile.
-Line 71: [39m
-Line 72: [36m./src/components/cyber-altar/PrayerClient.tsx[39m:[33m21[39m:[33m9[39m
-Line 73: [31m[1mType error[22m[39m: Type '{ nickname: string; prayer: string; altarImage: string; }' is not assignable to type 'Intri
-Line 74:   Property 'nickname' does not exist on type 'IntrinsicAttributes & HolyPlaceProps'.
-Line 75: [0m [90m 19 |[39m     [36mreturn[39m (
-Line 76:  [90m 20 |[39m       [33m<[39m[33mHolyPlace[39m
-Line 77: [31m[1m>[22m[39m[90m 21 |[39m         nickname[33m=[39m{nickname}
-Line 78:  [90m    |[39m         [31m[1m^[22m[39m
-Line 79:  [90m 22 |[39m         prayer[33m=[39m{prayer}
-Line 80:  [90m 23 |[39m         altarImage[33m=[39m{altarImage}
-Line 81:  [90m 24 |[39m       [33m/[39m[33m>[39m[0m
-Line 82: Next.js build worker exited with code: 1 and signal: null
-Line 83: [91m[1m​[22m[39m
-Line 84: [91m[1m"build.command" failed                                        [22m[39m
-Line 85: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 86: ​
-Line 87:   [31m[1mError message[22m[39m
-Line 88:   Command failed with exit code 1: npm run build
-Line 89: ​
-Line 90:   [31m[1mError location[22m[39m
-Line 91:   In Build command from Netlify app:
-Line 92:   npm run build
-Line 93: ​
-Line 94:   [31m[1mResolved config[22m[39m
-Line 95:   build:
-Line 96:     command: npm run build
-Line 97:     commandOrigin: ui
-Line 98:     environment:
-Line 99:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 100:       - NEXT_PUBLIC_SUPABASE_URL
-Line 101:       - SUPABASE_SERVICE_ROLE_KEY
-Line 102:     publish: /opt/build/repo/.next
-Line 103:     publishOrigin: ui
-Line 104:   plugins:
-Line 105:     - inputs: {}
-Line 106:       origin: ui
-Line 107:       package: "@netlify/plugin-nextjs"
-Line 108: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 109: Failing build: Failed to build site
-Line 110: Finished processing build request in 37.357s
+Line 67:  [33m[1m⚠[22m[39m Compiled with warnings in 3.8s
+Line 68: ./src/components/cyber-altar/PrayerClient.tsx
+Line 69: Attempted import error: '@/components/cyber-altar/holyplace' does not contain a default export (imported as 'HolyPlace').
+Line 70: Import trace for requested module:
+Line 71: ./src/components/cyber-altar/PrayerClient.tsx
+Line 72:  [33m[1m⚠[22m[39m Compiled with warnings in 2.6s
+Line 73: ./src/components/cyber-altar/PrayerClient.tsx
+Line 74: Attempted import error: '@/components/cyber-altar/holyplace' does not contain a default export (imported as 'HolyPlace').
+Line 75: Import trace for requested module:
+Line 76: ./src/components/cyber-altar/PrayerClient.tsx
+Line 77:  [32m[1m✓[22m[39m Compiled successfully in 6.6s
+Line 78:  [37m[1m [22m[39m Linting and checking validity of types ...
+Line 79: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 80: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
+Line 81: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 82: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
+Line 83: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 84: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 85: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
+Line 86: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 87: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
+Line 88: [31mFailed to compile.
+Line 89: [39m
+Line 90: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m15[39m:[33m8[39m
+Line 91: [31m[1mType error[22m[39m: Module '"/opt/build/repo/src/components/cyber-altar/holyplace"' has no default export.
+Line 92: [0m [90m 13 |[39m [36mimport[39m { [33mSigninForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/signinform'[39m[3
+Line 93:  [90m 14 |[39m [36mimport[39m { [33mAltarForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/altarform'[39m[33m;[3
+Line 94: [31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m [33mHolyPlace[39m [36mfrom[39m [32m'@/components/cyber-altar/holyplace
+Line 95:  [90m    |[39m        [31m[1m^[22m[39m
+Line 96:  [90m 16 |[39m
+Line 97:  [90m 17 |[39m [36mconst[39m [33mSESSION_KEY[39m [33m=[39m [32m'cyber-altar-session-nickname'[39m[33m;[39m
+Line 98:  [90m 18 |[39m[0m
+Line 99: Next.js build worker exited with code: 1 and signal: null
+Line 100: [91m[1m​[22m[39m
+Line 101: [91m[1m"build.command" failed                                        [22m[39m
+Line 102: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 103: ​
+Line 104:   [31m[1mError message[22m[39m
+Line 105:   Command failed with exit code 1: npm run build
+Line 106: ​
+Line 107:   [31m[1mError location[22m[39m
+Line 108:   In Build command from Netlify app:
+Line 109:   npm run build
+Line 110: ​
+Line 111:   [31m[1mResolved config[22m[39m
+Line 112:   build:
+Line 113:     command: npm run build
+Line 114:     commandOrigin: ui
+Line 115:     environment:
+Line 116:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 117:       - NEXT_PUBLIC_SUPABASE_URL
+Line 118:       - SUPABASE_SERVICE_ROLE_KEY
+Line 119:     publish: /opt/build/repo/.next
+Line 120:     publishOrigin: ui
+Line 121:   plugins:
+Line 122:     - inputs: {}
+Line 123:       origin: ui
+Line 124:       package: "@netlify/plugin-nextjs"
+Line 125: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 126: Failing build: Failed to build site
+Line 127: Finished processing build request in 39.533s
