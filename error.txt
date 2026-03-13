@@ -1,10 +1,19 @@
 The Netlify deploy errored, with the following guidance provided:
 
-Diagnosis:  
-The build stops during type checking because [line 71](#L71-L78) reports `Cannot find module '@/components/cyber-altar/SigninForm'`. On Netlify’s Linux environment the filesystem is case-sensitive, and the import path `SigninForm` does not match the actual filename (`SignInForm.tsx`, with a capital “I”).
+**Diagnosis**
+- [line 70](#L70) ⇒ `PrayerClient.tsx` imports `@/components/cyber-altar/HolyPlace`.
+- [line 71](#L71) ⇒ Next.js can’t resolve that module, so the build fails. On Netlify’s Linux environment the filesystem is case-sensitive; locally it may have worked because the import’s casing happened to match a differently cased file.
 
-Solution:  
-Update the code so the import path exactly matches the file name (or rename the file to match the import). For example, in `src/components/cyber-altar/CyberAltarPage.tsx` change the import to `@/components/cyber-altar/SignInForm` if the file is `SignInForm.tsx`, or rename the file to `SigninForm.tsx`. Commit the change and rerun the build.
+**Solution**
+1. Open `src/components/cyber-altar/PrayerClient.tsx` and locate the import for `HolyPlace`.
+2. Confirm the actual location/name of the component file under `src/components/cyber-altar`.  
+   - If the file exists but with different casing (e.g. `holyPlace.tsx` or a folder such as `holy-place/HolyPlace.tsx`), rename the file or adjust the import so the path (including directory names and casing) matches exactly:
+   ```ts
+   import HolyPlace from '@/components/cyber-altar/holy-place/HolyPlace';
+   ```
+   *(change the path to match the real filename and directory)*  
+   - If the file is missing, add or commit the intended `HolyPlace` component to the repo at the path you’re importing from.
+3. Commit and push the fix, then re-run the Netlify build.
 
 The relevant error logs are:
 
@@ -22,6 +31,8 @@ Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
 Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
 Line 12: Attempting Node.js version '20.12.2' from .node-version
 Line 13: Downloading and installing node v20.12.2...
+Line 57: [96m[1m​[22m[39m
+Line 58: [96m[1mBuild command from Netlify app                                [22m[39m
 Line 59: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
 Line 60: ​
 Line 61: [36m$ npm run build[39m
@@ -30,54 +41,38 @@ Line 63: > next build
 Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
 Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.2s
-Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 69: [31mFailed to compile.
-Line 70: [39m
-Line 71: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m13[39m:[33m28[39m
-Line 72: [31m[1mType error[22m[39m: Cannot find module '@/components/cyber-altar/SigninForm' or its corresponding type declarations.
-Line 73: [0m [90m 11 |[39m [36mimport[39m { [33mMainMenu[39m } [36mfrom[39m [32m'@/components/cyber-altar/MainMenu'[39m[33m;
-Line 74:  [90m 12 |[39m [36mimport[39m { [33mSignupForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/SignUpForm'[39m[33m;
-Line 75: [31m[1m>[22m[39m[90m 13 |[39m [36mimport[39m { [33mSigninForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/Sign
-Line 76:  [90m    |[39m                            [31m[1m^[22m[39m
-Line 77:  [90m 14 |[39m [36mimport[39m { [33mAltarForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/AltarForm'[39m[33m;[3
-Line 78:  [90m 15 |[39m [36mimport[39m [33mHolyPlace[39m [36mfrom[39m [32m'@/components/cyber-altar/HolyPlace'[39m[33m;[39m
-Line 79:  [90m 16 |[39m[0m
-Line 80: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
-Line 81: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
-Line 82: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
-Line 83: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 84: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
-Line 85: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
-Line 86: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
-Line 87: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
-Line 88: Next.js build worker exited with code: 1 and signal: null
-Line 89: [91m[1m​[22m[39m
-Line 90: [91m[1m"build.command" failed                                        [22m[39m
-Line 91: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 92: ​
-Line 93:   [31m[1mError message[22m[39m
-Line 94:   Command failed with exit code 1: npm run build
-Line 95: ​
-Line 96:   [31m[1mError location[22m[39m
-Line 97:   In Build command from Netlify app:
-Line 98:   npm run build
-Line 99: ​
-Line 100:   [31m[1mResolved config[22m[39m
-Line 101:   build:
-Line 102:     command: npm run build
-Line 103:     commandOrigin: ui
-Line 104:     environment:
-Line 105:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 106:       - NEXT_PUBLIC_SUPABASE_URL
-Line 107:       - SUPABASE_SERVICE_ROLE_KEY
-Line 108:     publish: /opt/build/repo/.next
-Line 109:     publishOrigin: ui
-Line 110:   plugins:
-Line 111:     - inputs: {}
-Line 112:       origin: ui
-Line 113:       package: "@netlify/plugin-nextjs"
-Line 114: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 115: Failing build: Failed to build site
-Line 116: Finished processing build request in 35.375s
-Line 117: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 67: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 68: [31mFailed to compile.
+Line 69: [39m
+Line 70: ./src/components/cyber-altar/PrayerClient.tsx
+Line 71: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/cyber-altar/HolyPlace[39m'
+Line 72: https://nextjs.org/docs/messages/module-not-found
+Line 73: > Build failed because of webpack errors
+Line 74: [91m[1m​[22m[39m
+Line 75: [91m[1m"build.command" failed                                        [22m[39m
+Line 76: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 77: ​
+Line 78:   [31m[1mError message[22m[39m
+Line 79:   Command failed with exit code 1: npm run build
+Line 80: ​
+Line 81:   [31m[1mError location[22m[39m
+Line 82:   In Build command from Netlify app:
+Line 83:   npm run build
+Line 84: ​
+Line 85:   [31m[1mResolved config[22m[39m
+Line 86:   build:
+Line 87:     command: npm run build
+Line 88:     commandOrigin: ui
+Line 89:     environment:
+Line 90:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 91:       - NEXT_PUBLIC_SUPABASE_URL
+Line 92:       - SUPABASE_SERVICE_ROLE_KEY
+Line 93:     publish: /opt/build/repo/.next
+Line 94:     publishOrigin: ui
+Line 95:   plugins:
+Line 96:     - inputs: {}
+Line 97:       origin: ui
+Line 98:       package: "@netlify/plugin-nextjs"
+Line 99: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 100: Failing build: Failed to build site
+Line 101: Finished processing build request in 30.209s
