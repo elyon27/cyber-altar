@@ -1,0 +1,19 @@
+import PrayerForm from "@/components/cyber-altar/Prayer-Form";
+
+type Props = {
+  params: {
+    slug: string;
+  };
+  searchParams: {
+    altarImage?: string;
+  };
+};
+
+export default function Page({ params, searchParams }: Props) {
+  return (
+    <Prayer-Form
+      nickname={params.slug}
+      altarImage={searchParams.altarImage || ""}
+    />
+  );
+}

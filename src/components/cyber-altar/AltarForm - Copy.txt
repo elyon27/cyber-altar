@@ -1,0 +1,47 @@
+// ==============================
+          <label className="mb-2 block text-sm text-blue-200">Your Prayer</label>
+          <textarea
+            value={prayer}
+            onChange={(e) => setPrayer(e.target.value)}
+            placeholder="Write the prayer you wish to lay before the altar..."
+            rows={7}
+            className="w-full rounded-2xl border border-blue-700 bg-blue-950/70 px-4 py-3 outline-none placeholder:text-blue-300/40"
+          />
+        </div>
+
+        <div className="mt-6">
+          <p className="mb-3 text-sm text-blue-200">Choose the altar picture</p>
+          <AltarImagePicker
+            images={altarImages}
+            selectedAltar={selectedAltar}
+            onSelect={setSelectedAltar}
+          />
+        </div>
+
+        {error && <p className="mt-4 text-sm text-rose-300">{error}</p>}
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            onClick={onProceed}
+            className="rounded-2xl bg-blue-500 px-5 py-3 font-semibold transition hover:bg-blue-400"
+          >
+            Proceed to the Holy Place
+          </button>
+          <button
+            onClick={onBack}
+            className="rounded-2xl border border-blue-600 px-5 py-3 font-semibold text-blue-100 transition hover:bg-blue-800/40"
+          >
+            Back to Main Menu
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-blue-700/60 bg-blue-950/50 p-6">
+        <h3 className="text-xl font-semibold">Preview</h3>
+        <div className="relative mt-5 aspect-[4/5] overflow-hidden rounded-3xl border border-blue-700 bg-blue-950/60">
+          <Image src={selectedAltar} alt="Selected altar" fill className="object-cover" />
+        </div>
+      </div>
+    </section>
+  );
+}

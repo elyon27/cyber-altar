@@ -1,22 +1,11 @@
 The Netlify deploy errored, with the following guidance provided:
 
 Diagnosis:
-- [#L68-L72](#L68-L72) shows `src/app/prayer-wall/page.tsx` importing `createClient` from `../../lib/supabase`, but that symbol is not exported, so the module resolution fails during compilation.
-- [#L76-L83](#L76-L83) shows TypeScript failing because `lib/auth.ts` imports `createServerSupabase` from `@/lib/supabase-server`, yet `lib/supabase-server.ts` (or a compatible module) is missing from the repo, leading to a fatal type error.
+- The build fails during the prerender step because the Supabase client receives an invalid URL. See [line 74](#L74) through [line 84](#L84): `Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.` This happens when `NEXT_PUBLIC_SUPABASE_URL` is missing or not a properly formatted `https://…` URL during the static generation of `/prayer-wall`.
 
 Solution:
-- Update `lib/supabase.ts` so it exports a `createClient` function (or adjust `src/app/prayer-wall/page.tsx` to import an actually exported symbol such as a default client instance). Example:
-
-  ```ts
-  // lib/supabase.ts
-  import { createBrowserClient } from '@supabase/ssr';
-
-  export function createClient() {
-    return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-  }
-  ```
-
-- Either create the missing `lib/supabase-server.ts` file exporting `createServerSupabase` (mirroring the approach used for the browser client but with a server-safe helper) or change the import in `lib/auth.ts` to target the file that actually exists. Ensure the new/updated file is committed so Netlify can access it.
+1. In Netlify’s Site settings → Build & deploy → Environment, ensure that `NEXT_PUBLIC_SUPABASE_URL` is defined and set to your Supabase project URL, including the `https://` scheme (e.g., `https://your-project.supabase.co`). Confirm that `NEXT_PUBLIC_SUPABASE_ANON_KEY` is also present.
+2. Redeploy the site after updating the environment variable.
 
 The relevant error logs are:
 
@@ -34,56 +23,52 @@ Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
 Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
 Line 12: Attempting Node.js version '20.12.2' from .node-version
 Line 13: Downloading and installing node v20.12.2...
-Line 59: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 60: ​
-Line 61: [36m$ npm run build[39m
-Line 62: > cyber-altar@1.0.0 build
-Line 63: > next build
 Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
 Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [33m[1m⚠[22m[39m Compiled with warnings in 2.8s
-Line 68: ./src/app/prayer-wall/page.tsx
-Line 69: Attempted import error: 'createClient' is not exported from '../../lib/supabase' (imported as 'createClient').
-Line 70: Import trace for requested module:
-Line 71: ./src/app/prayer-wall/page.tsx
-Line 72:  [32m[1m✓[22m[39m Compiled successfully in 4.9s
-Line 73:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 74: [31mFailed to compile.
-Line 75: [39m
-Line 76: [36m./lib/auth.ts[39m:[33m2[39m:[33m38[39m
-Line 77: [31m[1mType error[22m[39m: Cannot find module '@/lib/supabase-server' or its corresponding type declarations.
-Line 78: [0m [90m 1 |[39m [36mimport[39m { redirect } [36mfrom[39m [32m"next/navigation"[39m[33m;[39m
-Line 79: [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { createServerSupabase } [36mfrom[39m [32m"@/lib/supabase-server"[39m[3
-Line 80:  [90m   |[39m                                      [31m[1m^[22m[39m
-Line 81:  [90m 3 |[39m
-Line 82:  [90m 4 |[39m [36mexport[39m [36masync[39m [36mfunction[39m requireUser() {
-Line 83:  [90m 5 |[39m   [36mconst[39m supabase [33m=[39m [36mawait[39m createServerSupabase()[33m;[39m[0m
-Line 84: Next.js build worker exited with code: 1 and signal: null
-Line 85: [91m[1m​[22m[39m
-Line 86: [91m[1m"build.command" failed                                        [22m[39m
-Line 87: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 88: ​
-Line 89:   [31m[1mError message[22m[39m
-Line 90:   Command failed with exit code 1: npm run build
-Line 91: ​
-Line 92:   [31m[1mError location[22m[39m
-Line 93:   In Build command from Netlify app:
-Line 94:   npm run build
-Line 95: ​
-Line 96:   [31m[1mResolved config[22m[39m
-Line 97:   build:
-Line 98:     command: npm run build
-Line 99:     commandOrigin: ui
-Line 100:     environment:
-Line 101:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 102:       - NEXT_PUBLIC_SUPABASE_URL
-Line 103:     publish: /opt/build/repo/.next
-Line 104:     publishOrigin: ui
-Line 105:   plugins:
-Line 106:     - inputs: {}
-Line 107:       origin: ui
-Line 108:       package: "@netlify/plugin-nextjs"
-Line 109: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 110: Failing build: Failed to build site
-Line 111: Finished processing build request in 30.704s
+Line 67:  [32m[1m✓[22m[39m Compiled successfully in 5.9s
+Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
+Line 69:  [37m[1m [22m[39m Collecting page data ...
+Line 70:  [37m[1m [22m[39m Generating static pages (0/9) ...
+Line 71:  [37m[1m [22m[39m Generating static pages (2/9)
+Line 72:  [37m[1m [22m[39m Generating static pages (4/9)
+Line 73:  [37m[1m [22m[39m Generating static pages (6/9)
+Line 74: Error occurred prerendering page "/prayer-wall". Read more: https://nextjs.org/docs/messages/prerender-error
+Line 75: Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+Line 76:     at <unknown> (.next/server/chunks/968.js:37:47016)
+Line 77:     at new cg (.next/server/chunks/968.js:37:47198)
+Line 78:     at ch (.next/server/chunks/968.js:37:51145)
+Line 79:     at cy (.next/server/chunks/968.js:41:134)
+Line 80:     at f (.next/server/app/prayer-wall/page.js:1:1270)
+Line 81:     at stringify (<anonymous>) {
+Line 82:   digest: [32m'3444091986'[39m
+Line 83: }
+Line 84: Export encountered an error on /prayer-wall/page: /prayer-wall, exiting the build.
+Line 85:  [31m[1m⨯[22m[39m Next.js build worker exited with code: 1 and signal: null
+Line 86: [91m[1m​[22m[39m
+Line 87: [91m[1m"build.command" failed                                        [22m[39m
+Line 88: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 89: ​
+Line 90:   [31m[1mError message[22m[39m
+Line 91:   Command failed with exit code 1: npm run build
+Line 92: ​
+Line 93:   [31m[1mError location[22m[39m
+Line 94:   In Build command from Netlify app:
+Line 95:   npm run build
+Line 96: ​
+Line 97:   [31m[1mResolved config[22m[39m
+Line 98:   build:
+Line 99:     command: npm run build
+Line 100:     commandOrigin: ui
+Line 101:     environment:
+Line 102:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 103:       - NEXT_PUBLIC_SUPABASE_URL
+Line 104:     publish: /opt/build/repo/.next
+Line 105:     publishOrigin: ui
+Line 106:   plugins:
+Line 107:     - inputs: {}
+Line 108:       origin: ui
+Line 109:       package: "@netlify/plugin-nextjs"
+Line 110: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 111: Failing build: Failed to build site
+Line 112: Finished processing build request in 38.636s

@@ -1,29 +1,21 @@
-type PrayerCardProps = {
-  id: number;
-  name: string;
-  message: string;
-  createdAt: string;
+type Prayer = {
+  nickname: string;
+  prayer: string;
+  altar: string;
 };
 
-export default function PrayerCard({
-  name,
-  message,
-  createdAt,
-}: PrayerCardProps) {
-  const formattedDate = new Date(createdAt).toLocaleString();
-
+export default function PrayerCard({ nickname, prayer }: Prayer) {
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-4">
-        <h3 className="text-base font-semibold text-white">
-          {name || "Anonymous"}
-        </h3>
-        <span className="text-xs text-white/50">{formattedDate}</span>
-      </div>
+    <div className="rounded-2xl border border-blue-700 bg-blue-950/60 p-4 shadow-md">
+      <p className="text-blue-200 text-sm mb-2">Pilgrim:</p>
 
-      <p className="whitespace-pre-wrap text-sm leading-7 text-white/80">
-        {message}
+      <h3 className="text-lg font-semibold text-white mb-3">
+        {nickname}
+      </h3>
+
+      <p className="text-blue-100 text-sm leading-relaxed">
+        {prayer}
       </p>
-    </article>
+    </div>
   );
 }
