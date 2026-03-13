@@ -1,16 +1,16 @@
-import type { PageProps } from "next";
-
-type Params = {
-  slug: string;
+type PageProps = {
+  params: {
+    slug: string;
+  };
 };
 
-export default async function AltarPage({ params }: PageProps<Params>) {
-  const { slug } = await params;
+export default function AltarPage({ params }: PageProps) {
+  const { slug } = params;
 
   return (
-    <div>
-      <h1>Cyber Altar</h1>
-      <p>Pilgrim: {slug}</p>
+    <div style={{ padding: "40px", textAlign: "center" }}>
+      <h1>Holy Place</h1>
+      <p>Altar: {slug}</p>
     </div>
   );
 }
