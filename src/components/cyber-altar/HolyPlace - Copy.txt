@@ -2,18 +2,27 @@
 
 import Image from "next/image";
 
-type HolyPlaceProps = {
-  currentUser: UserRecord | null
-  crossImage: string
-  candleActive: boolean
-  candleHeightPercent: number
-  remainingText: string
-  loading: boolean
-  onLightCandle: () => void
-  onBack: () => void
-};
+export type HolyPlaceProps = {
+  // Used by PrayerClient
+  nickname?: string
+  prayer?: string
+  altarImage?: string
 
-export default function HolyPlace({
+  // Used by CyberAltarPage
+  currentUser?: UserRecord | null
+  crossImage?: string
+  candleActive?: boolean
+  candleHeightPercent?: number
+  remainingText?: string
+  loading?: boolean
+  onLightCandle?: () => void
+  onBack?: () => void
+}
+
+const HolyPlace: React.FC<HolyPlaceProps> = ({
+  nickname,
+  prayer,
+  altarImage,
   currentUser,
   crossImage,
   candleActive,
@@ -22,7 +31,7 @@ export default function HolyPlace({
   loading,
   onLightCandle,
   onBack
-}: HolyPlaceProps) {
+}) => {
 
   return (
     <main className="min-h-screen bg-blue-950 px-4 py-10 text-white">
