@@ -82,7 +82,7 @@ export default function HolyPlace({
 
             <div className="relative mx-auto h-72 w-full max-w-[180px]">
               <Image
-                src="/altar/candle.png"
+                src="/altar/candle.jpg"
                 alt="Candle"
                 fill
                 className="object-contain drop-shadow-[0_0_24px_rgba(255,220,120,0.45)]"
