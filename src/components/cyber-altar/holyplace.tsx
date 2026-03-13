@@ -3,17 +3,25 @@
 import Image from "next/image";
 
 type HolyPlaceProps = {
-  currentUser: UserRecord
-  crossImage: string
-  candleActive: boolean
-  candleHeightPercent: number
-  remainingText: string
-  loading: boolean
-  onLightCandle: () => void
-  onBack: () => void
+  nickname: string
+  prayer: string
+  altarImage: string
+
+  currentUser?: UserRecord
+  crossImage?: string
+  candleActive?: boolean
+  candleHeightPercent?: number
+  remainingText?: string
+  loading?: boolean
+  onLightCandle?: () => void
+  onBack?: () => void
 };
 
 export default function HolyPlace({
+  nickname,
+  prayer,
+  altarImage,
+
   currentUser,
   crossImage,
   candleActive,

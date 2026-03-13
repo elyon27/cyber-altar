@@ -1,18 +1,30 @@
 The Netlify deploy errored, with the following guidance provided:
 
-Diagnosis:
-- [#L71-L79](#L71-L79) shows the Next.js TypeScript build failing because `<HolyPlace … onLightCandle={handleLightCandle} … />` passes an `onLightCandle` prop, but `HolyPlaceProps` does not define that property. With `noImplicitAny`/strict JSX checks, TypeScript stops the build.
+Diagnosis:  
+- [line 79](#L79)-[line 88](#L88) show TypeScript failing because `PrayerClient.tsx` passes `nickname`, `prayer`, and `altarImage` props to `<HolyPlace />`, but `HolyPlaceProps` does not declare these fields.
 
-Solution:
-1. Update the `HolyPlace` component’s props definition (likely in `src/components/cyber-altar/HolyPlace.tsx`) to include the callback. For example:
-   ```ts
-   interface HolyPlaceProps {
-     // existing props…
-     onLightCandle: () => void;
-   }
-   ```
-   Adjust the type signature to match how `HolyPlace` uses the handler.
-2. Ensure the component destructures/uses the new prop and re-run `npm run build` locally to confirm the type check passes before triggering a Netlify build.
+Solution:  
+Update the `HolyPlaceProps` type (likely in `src/components/cyber-altar/HolyPlace.tsx`) so it includes the props being passed. For example:
+
+```tsx
+// src/components/cyber-altar/HolyPlace.tsx
+type HolyPlaceProps = {
+  nickname: string;
+  prayer: string;
+  altarImage: string;
+  // any existing props ...
+};
+```
+
+Ensure the component signature uses the updated props:
+
+```tsx
+export function HolyPlace({ nickname, prayer, altarImage }: HolyPlaceProps) {
+  // component body
+}
+```
+
+Re-run the build after updating the typings.
 
 The relevant error logs are:
 
@@ -30,55 +42,55 @@ Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
 Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
 Line 12: Attempting Node.js version '20.12.2' from .node-version
 Line 13: Downloading and installing node v20.12.2...
-Line 59: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 60: ​
-Line 61: [36m$ npm run build[39m
-Line 62: > cyber-altar@1.0.0 build
-Line 63: > next build
-Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
-Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
-Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.0s
+Line 67:  [32m[1m✓[22m[39m Compiled successfully in 5.9s
 Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 69: [31mFailed to compile.
-Line 70: [39m
-Line 71: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m289[39m:[33m13[39m
-Line 72: [31m[1mType error[22m[39m: Type '{ currentUser: UserRecord; crossImage: string; candleActive: boolean; candleHeightPercent: 
-Line 73:   Property 'onLightCandle' does not exist on type 'IntrinsicAttributes & HolyPlaceProps'.
-Line 74: [0m [90m 287 |[39m             remainingText[33m=[39m{remainingText}
-Line 75:  [90m 288 |[39m             loading[33m=[39m{loading}
-Line 76: [31m[1m>[22m[39m[90m 289 |[39m             onLightCandle[33m=[39m{handleLightCandle}
-Line 77:  [90m     |[39m             [31m[1m^[22m[39m
-Line 78:  [90m 290 |[39m             onBack[33m=[39m{resetForMenu}
-Line 79:  [90m 291 |[39m           [33m/[39m[33m>[39m
-Line 80:  [90m 292 |[39m         )}[0m
-Line 81: Next.js build worker exited with code: 1 and signal: null
-Line 82: [91m[1m​[22m[39m
-Line 83: [91m[1m"build.command" failed                                        [22m[39m
-Line 84: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 85: ​
-Line 86:   [31m[1mError message[22m[39m
-Line 87:   Command failed with exit code 1: npm run build
-Line 88: ​
-Line 89:   [31m[1mError location[22m[39m
-Line 90:   In Build command from Netlify app:
-Line 91:   npm run build
-Line 92: ​
-Line 93:   [31m[1mResolved config[22m[39m
-Line 94:   build:
-Line 95:     command: npm run build
-Line 96:     commandOrigin: ui
-Line 97:     environment:
-Line 98:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 99:       - NEXT_PUBLIC_SUPABASE_URL
-Line 100:       - SUPABASE_SERVICE_ROLE_KEY
-Line 101:     publish: /opt/build/repo/.next
-Line 102:     publishOrigin: ui
-Line 103:   plugins:
-Line 104:     - inputs: {}
-Line 105:       origin: ui
-Line 106:       package: "@netlify/plugin-nextjs"
-Line 107: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 108: Failing build: Failed to build site
-Line 109: Finished processing build request in 35.489s
-Line 110: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 69: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
+Line 70: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 71: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
+Line 72: [33m70[39m:[33m21[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 73: [33m94[39m:[33m15[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider u
+Line 74: [36m./src/components/cyber-altar/Prayer-Form.tsx[39m
+Line 75: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
+Line 76: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
+Line 77: [31mFailed to compile.
+Line 78: [39m
+Line 79: [36m./src/components/cyber-altar/PrayerClient.tsx[39m:[33m21[39m:[33m9[39m
+Line 80: [31m[1mType error[22m[39m: Type '{ nickname: string; prayer: string; altarImage: string; }' is not assignable to type 'Intri
+Line 81:   Property 'nickname' does not exist on type 'IntrinsicAttributes & HolyPlaceProps'.
+Line 82: [0m [90m 19 |[39m     [36mreturn[39m (
+Line 83:  [90m 20 |[39m       [33m<[39m[33mHolyPlace[39m
+Line 84: [31m[1m>[22m[39m[90m 21 |[39m         nickname[33m=[39m{nickname}
+Line 85:  [90m    |[39m         [31m[1m^[22m[39m
+Line 86:  [90m 22 |[39m         prayer[33m=[39m{prayer}
+Line 87:  [90m 23 |[39m         altarImage[33m=[39m{altarImage}
+Line 88:  [90m 24 |[39m       [33m/[39m[33m>[39m[0m
+Line 89: Next.js build worker exited with code: 1 and signal: null
+Line 90: [91m[1m​[22m[39m
+Line 91: [91m[1m"build.command" failed                                        [22m[39m
+Line 92: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 93: ​
+Line 94:   [31m[1mError message[22m[39m
+Line 95:   Command failed with exit code 1: npm run build
+Line 96: ​
+Line 97:   [31m[1mError location[22m[39m
+Line 98:   In Build command from Netlify app:
+Line 99:   npm run build
+Line 100: ​
+Line 101:   [31m[1mResolved config[22m[39m
+Line 102:   build:
+Line 103:     command: npm run build
+Line 104:     commandOrigin: ui
+Line 105:     environment:
+Line 106:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 107:       - NEXT_PUBLIC_SUPABASE_URL
+Line 108:       - SUPABASE_SERVICE_ROLE_KEY
+Line 109:     publish: /opt/build/repo/.next
+Line 110:     publishOrigin: ui
+Line 111:   plugins:
+Line 112:     - inputs: {}
+Line 113:       origin: ui
+Line 114:       package: "@netlify/plugin-nextjs"
+Line 115: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 116: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 117: Failing build: Failed to build site
+Line 118: Finished processing build request in 35.337s
