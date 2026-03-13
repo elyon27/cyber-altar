@@ -2,41 +2,51 @@ The Netlify deploy errored, with the following guidance provided:
 
 **Diagnosis**
 
-- The build fails with a TypeScript type error in [`src/app/altar/[slug]/page.tsx`](https://github.com/elyon27/cyber-altar/blob/main/src/app/altar/%5Bslug%5D/page.tsx).  
-- [Line 79](#L79) shows Next.js complaining that the local `Props` type doesn’t satisfy the `PageProps` constraint: `params` is typed as a plain object, but `PageProps` expects `params` to be a `Promise`.
+- The build fails during type-checking because `Props` defined in `src/app/prayer-wall/page.tsx` does not satisfy Next.js’ `PageProps` constraint. The error is reported in the build logs at [lines 79-82](#L79-L82).
+
+**Cause**
+
+- `generateMetadata` (and possibly the page component) declares a `Props` type whose `params` property is a plain object (`{ slug: string }`). Next.js’ `generateMetadata` signature requires its first argument to extend `PageProps`, where `params` is defined differently (it’s optional and, for the current Next.js version, treated as a `Promise`). Because the custom `Props` type doesn’t match that shape, TypeScript raises the constraint error.
 
 **Solution**
 
-Update the component so that it no longer conflicts with Next’s `PageProps` constraint. Two equivalent options:
+- Update the typing so the arguments passed to `generateMetadata` (and any related functions) genuinely satisfy `PageProps`. If you don’t need route parameters on `/prayer-wall`, drop the custom `Props` entirely. Otherwise, import `PageProps` from `next` and ensure your type matches it. For example:
 
-1. Stop typing the component with `Page<Props>` (or similar) and export a regular async function whose props you control:
+  ```tsx
+  // src/app/prayer-wall/page.tsx
+  import type { Metadata, ResolvingMetadata, PageProps } from 'next';
 
-   ```tsx
-   // src/app/altar/[slug]/page.tsx
-   type Props = {
-     params: { slug: string };
-   };
+  type PrayerWallPageProps = PageProps; // no slug on this route
 
-   export default async function Page({ params }: Props) {
-     const { slug } = params;
-     // ...
-   }
-   ```
+  export async function generateMetadata(
+    _props: PrayerWallPageProps,
+    _parent: ResolvingMetadata
+  ): Promise<Metadata> {
+    return {
+      title: 'Prayer Wall',
+      // …rest of metadata
+    };
+  }
 
-2. Or, if you want to keep using Next’s `Page`/`PageProps` types, align with their definition by treating `params` as a promise:
+  export default function PrayerWallPage() {
+    // …component code
+  }
+  ```
 
-   ```tsx
-   import type { PageProps } from "next";
+  If you really do need a slug, adjust to the shape Next expects:
 
-   type Props = PageProps<{ slug: string }>;
+  ```tsx
+  type PrayerWallPageProps = PageProps<Promise<{ slug: string }>>;
 
-   const Page: Page<Props> = async ({ params }) => {
-     const { slug } = await params;
-     // ...
-   };
-   ```
+  export async function generateMetadata(
+    { params }: PrayerWallPageProps,
+  ): Promise<Metadata> {
+    const { slug } = await params;
+    // …use slug
+  }
+  ```
 
-Either change will satisfy the compiler and allow the build to succeed.
+  Modify the component accordingly (await `params` before using it). After aligning the types with `PageProps`, rerun the build and it should pass.
 
 The relevant error logs are:
 
@@ -54,7 +64,7 @@ Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
 Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
 Line 12: Attempting Node.js version '20.12.2' from .node-version
 Line 13: Downloading and installing node v20.12.2...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 5.7s
+Line 67:  [32m[1m✓[22m[39m Compiled successfully in 5.9s
 Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
 Line 69: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
 Line 70: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
@@ -66,7 +76,7 @@ Line 75: [33m31[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` cou
 Line 76: [36minfo[39m  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#di
 Line 77: [31mFailed to compile.
 Line 78: [39m
-Line 79: [36msrc/app/altar/[slug]/page.tsx[39m
+Line 79: [36msrc/app/prayer-wall/page.tsx[39m
 Line 80: [31m[1mType error[22m[39m: Type 'Props' does not satisfy the constraint 'PageProps'.
 Line 81:   Types of property 'params' are incompatible.
 Line 82:     Type '{ slug: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStrin
@@ -95,4 +105,4 @@ Line 104:       origin: ui
 Line 105:       package: "@netlify/plugin-nextjs"
 Line 106: Build failed due to a user error: Build script returned non-zero exit code: 2
 Line 107: Failing build: Failed to build site
-Line 108: Finished processing build request in 35.395s
+Line 108: Finished processing build request in 36.264s

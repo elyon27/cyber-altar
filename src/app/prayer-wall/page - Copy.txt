@@ -1,29 +1,16 @@
-import { createClient } from "../../lib/supabase";
+type Props = {
+  params: {
+    slug: string;
+  };
+};
 
-export default async function PrayerWall() {
-
-  const supabase = createClient();
-
-  const { data } = await supabase
-    .from("prayers")
-    .select("*")
-    .order("created_at",{ascending:false})
-    .limit(20);
+export default async function HolyPlacePage({ params }: Props) {
+  const { slug } = params;
 
   return (
-
-    <main style={{padding:"40px",background:"#020617",color:"white"}}>
-
-      <h1 style={{color:"#fcd34d"}}>Global Prayer Wall</h1>
-
-      {data?.map((p)=>(
-        <div key={p.id} style={{marginTop:"20px"}}>
-          <p>{p.prayer_text}</p>
-          <small>{p.altar_slug}</small>
-        </div>
-      ))}
-
-    </main>
-
-  )
+    <div>
+      <h1>Holy Place</h1>
+      <p>Welcome pilgrim: {slug}</p>
+    </div>
+  );
 }
