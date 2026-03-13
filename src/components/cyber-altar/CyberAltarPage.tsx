@@ -7,12 +7,12 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Screen, UserRecord } from '@/components/cyber-altar/types';
 import { ALTAR_IMAGES, CANDLE_DURATION_MS, CROSS_IMAGE } from '@/components/cyber-altar/constants';
 import { formatRemaining } from '@/components/cyber-altar/utils';
-import SiteHeader from '@/components/cyber-altar/SiteHeader';
-import { MainMenu } from '@/components/cyber-altar/MainMenu';
-import { SignupForm } from '@/components/cyber-altar/SignUpForm';
-import { SigninForm } from '@/components/cyber-altar/SigninForm';
-import { AltarForm } from '@/components/cyber-altar/AltarForm';
-import HolyPlace from '@/components/cyber-altar/HolyPlace';
+import SiteHeader from '@/components/cyber-altar/site-header';
+import { MainMenu } from '@/components/cyber-altar/main-menu';
+import { SignupForm } from '@/components/cyber-altar/signup-form';
+import { SigninForm } from '@/components/cyber-altar/signin-form';
+import { AltarForm } from '@/components/cyber-altar/altar-form';
+import { HolyPlace } from '@/components/cyber-altar/holy-place';
 
 const SESSION_KEY = 'cyber-altar-session-nickname';
 

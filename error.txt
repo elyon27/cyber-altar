@@ -1,15 +1,10 @@
 The Netlify deploy errored, with the following guidance provided:
 
-- Diagnosis  
-  - The build stopped during the TypeScript check because `src/components/cyber-altar/CyberAltarPage.tsx` imports a named export that does not exist. See the compiler message on [lines 71-77](#L71-L77): `@/components/cyber-altar/HolyPlace` does not export `HolyPlace`.
+Diagnosis:  
+The build stops during type checking because [line 71](#L71-L78) reports `Cannot find module '@/components/cyber-altar/SigninForm'`. On Netlify’s Linux environment the filesystem is case-sensitive, and the import path `SigninForm` does not match the actual filename (`SignInForm.tsx`, with a capital “I”).
 
-- Solution  
-  - Inspect [`src/components/cyber-altar/HolyPlace.tsx`](https://github.com/elyon27/cyber-altar/blob/main/src/components/cyber-altar/HolyPlace.tsx) and confirm how the component is exported.  
-  - If it is the default export (`export default function HolyPlace() { ... }`), update `src/components/cyber-altar/CyberAltarPage.tsx` to use a default import:  
-    ```tsx
-    import HolyPlace from '@/components/cyber-altar/HolyPlace';
-    ```  
-  - Alternatively, if you intended to use a named export, add `export const HolyPlace = ...` (or `export { HolyPlace }`) inside `HolyPlace.tsx` and keep the named import consistent. After aligning the import/export, rerun the build.
+Solution:  
+Update the code so the import path exactly matches the file name (or rename the file to match the import). For example, in `src/components/cyber-altar/CyberAltarPage.tsx` change the import to `@/components/cyber-altar/SignInForm` if the file is `SignInForm.tsx`, or rename the file to `SigninForm.tsx`. Commit the change and rerun the build.
 
 The relevant error logs are:
 
@@ -35,19 +30,19 @@ Line 63: > next build
 Line 64: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
 Line 65:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 66:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.0s
+Line 67:  [32m[1m✓[22m[39m Compiled successfully in 6.2s
 Line 68:  [37m[1m [22m[39m Linting and checking validity of types ...
 Line 69: [31mFailed to compile.
 Line 70: [39m
-Line 71: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m15[39m:[33m10[39m
-Line 72: [31m[1mType error[22m[39m: Module '"@/components/cyber-altar/HolyPlace"' has no exported member 'HolyPlace'. Did you mean to
-Line 73: [0m [90m 13 |[39m [36mimport[39m { [33mSigninForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/SignInForm'[39m[3
-Line 74:  [90m 14 |[39m [36mimport[39m { [33mAltarForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/AltarForm'[39m[33m;[3
-Line 75: [31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mHolyPlace[39m } [36mfrom[39m [32m'@/components/cyber-altar/HolyP
-Line 76:  [90m    |[39m          [31m[1m^[22m[39m
-Line 77:  [90m 16 |[39m
-Line 78:  [90m 17 |[39m [36mconst[39m [33mSESSION_KEY[39m [33m=[39m [32m'cyber-altar-session-nickname'[39m[33m;[39m
-Line 79:  [90m 18 |[39m[0m
+Line 71: [36m./src/components/cyber-altar/CyberAltarPage.tsx[39m:[33m13[39m:[33m28[39m
+Line 72: [31m[1mType error[22m[39m: Cannot find module '@/components/cyber-altar/SigninForm' or its corresponding type declarations.
+Line 73: [0m [90m 11 |[39m [36mimport[39m { [33mMainMenu[39m } [36mfrom[39m [32m'@/components/cyber-altar/MainMenu'[39m[33m;
+Line 74:  [90m 12 |[39m [36mimport[39m { [33mSignupForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/SignUpForm'[39m[33m;
+Line 75: [31m[1m>[22m[39m[90m 13 |[39m [36mimport[39m { [33mSigninForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/Sign
+Line 76:  [90m    |[39m                            [31m[1m^[22m[39m
+Line 77:  [90m 14 |[39m [36mimport[39m { [33mAltarForm[39m } [36mfrom[39m [32m'@/components/cyber-altar/AltarForm'[39m[33m;[3
+Line 78:  [90m 15 |[39m [36mimport[39m [33mHolyPlace[39m [36mfrom[39m [32m'@/components/cyber-altar/HolyPlace'[39m[33m;[39m
+Line 79:  [90m 16 |[39m[0m
 Line 80: [36m./src/components/cyber-altar/Altar-Prayer-Form.tsx[39m
 Line 81: [33m45[39m:[33m9[39m  [33m[1mWarning[22m[39m: Using `<img>` could result in slower LCP and higher bandwidth. Consider us
 Line 82: [36m./src/components/cyber-altar/Altar-Selection-Form.tsx[39m
@@ -84,4 +79,5 @@ Line 112:       origin: ui
 Line 113:       package: "@netlify/plugin-nextjs"
 Line 114: Build failed due to a user error: Build script returned non-zero exit code: 2
 Line 115: Failing build: Failed to build site
-Line 116: Finished processing build request in 34.766s
+Line 116: Finished processing build request in 35.375s
+Line 117: Failed during stage 'building site': Build script returned non-zero exit code: 2
