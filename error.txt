@@ -1,29 +1,24 @@
 The Netlify deploy errored, with the following guidance provided:
 
-**Diagnosis**
+**Diagnosis**  
+The build fails during Next.js’ type-checking stage because the JSX element `<CyberAltarPage slug={slug} />` in `src/app/altar/[slug]/page.tsx` assigns a `slug` prop to a component whose TypeScript definition doesn’t declare that prop. See the TypeScript error in the logs at [line 68](#L68)–[line 74](#L74). When a component is typed without props, the compiler assumes it only accepts `IntrinsicAttributes`, so any custom prop (like `slug`) is rejected.
 
-- The build fails during `next build` because TypeScript rejects the custom `PageProps` used in `src/app/altar/[slug]/page.tsx`. In Next.js 15 the compiler generates `PagePropsFromId` for that route, where `params` is typed as a `Promise`. The file currently defines `PageProps` with `params: { slug: string }`, so the type checker reports that the supplied `params` object is missing `Promise` methods ([lines 67-70](#L67-L70)).
+**Solution**  
+Update the `CyberAltarPage` component so its props type (or function signature) explicitly declares `slug: string`. For example:
 
-**Solution**
+```tsx
+// src/components/CyberAltarPage.tsx (adjust the path if different)
+type CyberAltarPageProps = {
+  slug: string;
+  // …any other props
+};
 
-Separate the types you use for the page component and for `generateMetadata` so they match what Next.js expects:
-
-```ts
-type PageParams = { slug: string };
-
-export default async function Page({ params }: { params: PageParams }) {
-  // ...
-}
-
-export async function generateMetadata(
-  { params }: { params: Promise<PageParams> }
-) {
-  const { slug } = await params;
-  // ...
+export default function CyberAltarPage({ slug }: CyberAltarPageProps) {
+  // component implementation
 }
 ```
 
-By keeping the page component’s `params` as the resolved object and only using the promised version for `generateMetadata`, the file now satisfies `PagePropsFromId`, and `next build` will pass.
+If the component is exported from a different file, apply the same change there. Once the component accepts `slug` in its props, rerun `npm run build` to confirm the type error is resolved.
 
 The relevant error logs are:
 
@@ -55,41 +50,45 @@ Line 59: > cyber-altar@1.0.0 build
 Line 60: > next build
 Line 61:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
 Line 62:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 63:  [32m[1m✓[22m[39m Compiled successfully in 7.7s
+Line 63:  [32m[1m✓[22m[39m Compiled successfully in 7.5s
 Line 64:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 65: [31mFailed to compile.
-Line 66: [39m
-Line 67: [36msrc/app/altar/[slug]/page.tsx[39m
-Line 68: [31m[1mType error[22m[39m: Type 'PageProps' does not satisfy the constraint 'import("/opt/build/repo/.next/types/app/altar/[
-Line 69:   Types of property 'params' are incompatible.
-Line 70:     Type '{ slug: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStrin
-Line 71: Next.js build worker exited with code: 1 and signal: null
-Line 72: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 73: [91m[1m​[22m[39m
-Line 74: [91m[1m"build.command" failed                                        [22m[39m
-Line 75: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 76: ​
-Line 77:   [31m[1mError message[22m[39m
-Line 78:   Command failed with exit code 1: npm run build
-Line 79: ​
-Line 80:   [31m[1mError location[22m[39m
-Line 81:   In Build command from Netlify app:
-Line 82:   npm run build
+Line 65: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 66: [31mFailed to compile.
+Line 67: [39m
+Line 68: [36m./src/app/altar/[slug]/page.tsx[39m:[33m14[39m:[33m26[39m
+Line 69: [31m[1mType error[22m[39m: Type '{ slug: string; }' is not assignable to type 'IntrinsicAttributes'.
+Line 70:   Property 'slug' does not exist on type 'IntrinsicAttributes'.
+Line 71: [0m [90m 12 |[39m   [36mconst[39m { slug } [33m=[39m [36mawait[39m params[33m;[39m
+Line 72:  [90m 13 |[39m
+Line 73: [31m[1m>[22m[39m[90m 14 |[39m   [36mreturn[39m [33m<[39m[33mCyberAltarPage[39m slug[33m=[39m{slug} [33m/[39m[33
+Line 74:  [90m    |[39m                          [31m[1m^[22m[39m
+Line 75:  [90m 15 |[39m }[0m
+Line 76: Next.js build worker exited with code: 1 and signal: null
+Line 77: [91m[1m​[22m[39m
+Line 78: [91m[1m"build.command" failed                                        [22m[39m
+Line 79: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 80: ​
+Line 81:   [31m[1mError message[22m[39m
+Line 82:   Command failed with exit code 1: npm run build
 Line 83: ​
-Line 84:   [31m[1mResolved config[22m[39m
-Line 85:   build:
-Line 86:     command: npm run build
-Line 87:     commandOrigin: ui
-Line 88:     environment:
-Line 89:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 90:       - NEXT_PUBLIC_SUPABASE_URL
-Line 91:       - SUPABASE_SERVICE_ROLE_KEY
-Line 92:     publish: /opt/build/repo/.next
-Line 93:     publishOrigin: ui
-Line 94:   plugins:
-Line 95:     - inputs: {}
-Line 96:       origin: ui
-Line 97:       package: "@netlify/plugin-nextjs"
-Line 98: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 99: Failing build: Failed to build site
-Line 100: Finished processing build request in 27.98s
+Line 84:   [31m[1mError location[22m[39m
+Line 85:   In Build command from Netlify app:
+Line 86:   npm run build
+Line 87: ​
+Line 88:   [31m[1mResolved config[22m[39m
+Line 89:   build:
+Line 90:     command: npm run build
+Line 91:     commandOrigin: ui
+Line 92:     environment:
+Line 93:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 94:       - NEXT_PUBLIC_SUPABASE_URL
+Line 95:       - SUPABASE_SERVICE_ROLE_KEY
+Line 96:     publish: /opt/build/repo/.next
+Line 97:     publishOrigin: ui
+Line 98:   plugins:
+Line 99:     - inputs: {}
+Line 100:       origin: ui
+Line 101:       package: "@netlify/plugin-nextjs"
+Line 102: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 103: Failing build: Failed to build site
+Line 104: Finished processing build request in 27.418s
