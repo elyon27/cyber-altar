@@ -1,12 +1,15 @@
 The Netlify deploy errored, with the following guidance provided:
 
-**Diagnosis**  
-- The build fails because Next.js cannot locate the file imported at `@/components/cyber-altar/HolyPlace` from `src/app/holy-place/page.tsx` ([line 66](#L66)). This indicates either the file/folder is missing, the path or filename casing does not match, or the alias `@` is misconfigured.
+Diagnosis:
+- [line 66](#L66) shows the build failing with `Module not found: Can't resolve '@/components/cyber-altar/HolyPlace'`, so `src/app/holy-place/page.tsx` imports a module that doesn't exist at that path or name.
 
-**Solution**  
-1. Verify that `src/components/cyber-altar/HolyPlace.tsx` (or `.tsx`, `.jsx`, etc.) actually exists in the repository and, if it was recently added, confirm it was committed and pushed.  
-2. If the file exists, make sure the import path matches the file name and folder casing exactly (e.g., `HolyPlace.tsx` vs `holyPlace.tsx`, `cyber-altar` vs `cyber-altar`).  
-3. If you intended to rename or move the component, update the import in `src/app/holy-place/page.tsx` to the correct relative or aliased path.
+Solution:
+1. Confirm whether the component file actually exists (e.g., `src/components/cyber-altar/HolyPlace.tsx`, `src/components/cyber-altar/HolyPlace/index.tsx`, etc.) and that the casing matches exactly—remember Netlify’s Linux builds are case-sensitive.
+2. If the file exists under a different name or directory, update the import in `src/app/holy-place/page.tsx` to match the real path, for example:
+   ```tsx
+   import HolyPlace from '@/components/cyber-altar/holy-place/HolyPlace';
+   ```
+3. If the file is missing altogether, add it to `src/components/cyber-altar/` (ensuring it’s committed to the repo) before rebuilding.
 
 The relevant error logs are:
 
@@ -51,7 +54,7 @@ Line 90:   plugins:
 Line 91:     - inputs: {}
 Line 92:       origin: ui
 Line 93:       package: "@netlify/plugin-nextjs"
-Line 94: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 95: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 96: Failing build: Failed to build site
-Line 97: Finished processing build request in 25.093s
+Line 94: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 95: Failing build: Failed to build site
+Line 96: Finished processing build request in 24.579s
+Line 97: Failed during stage 'building site': Build script returned non-zero exit code: 2
