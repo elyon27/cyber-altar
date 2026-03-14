@@ -1,63 +1,78 @@
 The Netlify deploy errored, with the following guidance provided:
 
-**Diagnosis**
+Diagnosis  
+The build stops during type checking because `src/app/layout.tsx` references `Geist(...)` without defining or importing `Geist`. TypeScript therefore raises “Cannot find name 'Geist'”, causing `next build` to fail.
 
-- The build fails because Next.js cannot resolve the import `@/components/cyber-altar/HolyPlace` in `src/app/holy-place/page.tsx` ([line 64](#L64)-[line 66](#L66)). This indicates the referenced component file either does not exist at that path, has a different name/casing, or was not committed.
+Solution  
+Import the font helper before using it (and install the package if it is not already present). For example:
 
-**Solution**
+```tsx
+import { Geist, Geist_Mono } from "geist/font";
+```
 
-1. Verify that `src/components/cyber-altar/HolyPlace.tsx` (or `.tsx/.ts`) exists in the repository and is committed.
-2. If the file exists but the casing or directory structure differs (e.g., `holyPlace.tsx`, different folder name), update the import in `src/app/holy-place/page.tsx` so the path exactly matches the filesystem case and location:
-   ```tsx
-   import HolyPlace from '@/components/cyber-altar/HolyPlace';
-   ```
-3. If the component file is missing, add it (or move it to the referenced path) and commit the change so Netlify can fetch it during the build.
+Then you can safely call:
 
-After correcting the import path or providing the missing component, trigger a new build.
+```tsx
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+```
+
+Adjust the import paths to match the `geist` package API you are using (e.g., `geist/font/sans` and `geist/font/mono` if your version exports those). Rebuild after adding the import.
 
 The relevant error logs are:
 
-Line 52: [96m[1m​[22m[39m
-Line 53: [96m[1mBuild command from Netlify app                                [22m[39m
-Line 54: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 55: ​
-Line 56: [36m$ npm run build[39m
-Line 57: > cyber-altar@1.0.0 build
-Line 58: > next build
-Line 59: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
-Line 60:   [1m[38;2;173;127;168m▲ Next.js 14.2.5[39m[22m
-Line 61:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 62: [31mFailed to compile.
-Line 63: [39m
-Line 64: ./src/app/holy-place/page.tsx
-Line 65: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/cyber-altar/HolyPlace[39m'
-Line 66: https://nextjs.org/docs/messages/module-not-found
-Line 67: > Build failed because of webpack errors
-Line 68: [91m[1m​[22m[39m
-Line 69: [91m[1m"build.command" failed                                        [22m[39m
-Line 70: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 71: ​
-Line 72:   [31m[1mError message[22m[39m
-Line 73:   Command failed with exit code 1: npm run build
-Line 74: ​
-Line 75:   [31m[1mError location[22m[39m
-Line 76:   In Build command from Netlify app:
-Line 77:   npm run build
-Line 78: ​
-Line 79:   [31m[1mResolved config[22m[39m
-Line 80:   build:
-Line 81:     command: npm run build
-Line 82:     commandOrigin: ui
-Line 83:     environment:
-Line 84:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 85:       - NEXT_PUBLIC_SUPABASE_URL
-Line 86:       - SUPABASE_SERVICE_ROLE_KEY
-Line 87:     publish: /opt/build/repo/.next
-Line 88:     publishOrigin: ui
-Line 89:   plugins:
-Line 90:     - inputs: {}
-Line 91:       origin: ui
-Line 92:       package: "@netlify/plugin-nextjs"
-Line 93: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 94: Failing build: Failed to build site
-Line 95: Finished processing build request in 22.94s
+Line 55: [96m[1mBuild command from Netlify app                                [22m[39m
+Line 56: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 57: ​
+Line 58: [36m$ npm run build[39m
+Line 59: > cyber-altar@1.0.0 build
+Line 60: > next build
+Line 61:   [1m[38;2;173;127;168m▲ Next.js 14.2.5[39m[22m
+Line 62:  [37m[1m [22m[39m Creating an optimized production build ...
+Line 63:  [32m[1m✓[22m[39m Compiled successfully
+Line 64:  [37m[1m [22m[39m Linting and checking validity of types ...
+Line 65: [31mFailed to compile.
+Line 66: [39m
+Line 67: [36m./src/app/layout.tsx[39m:[33m5[39m:[33m19[39m
+Line 68: [31m[1mType error[22m[39m: Cannot find name 'Geist'.
+Line 69: [0m [90m 3 |[39m [36mimport[39m [32m"./globals.css"[39m[33m;[39m[0m
+Line 70: [0m [90m 4 |[39m[0m
+Line 71: [0m[31m[1m>[22m[39m[90m 5 |[39m [36mconst[39m geistSans [33m=[39m [33mGeist[39m({[0m
+Line 72: [0m [90m   |[39m                   [31m[1m^[22m[39m[0m
+Line 73: [0m [90m 6 |[39m   variable[33m:[39m [32m"--font-geist-sans"[39m[33m,[39m[0m
+Line 74: [0m [90m 7 |[39m   subsets[33m:[39m [[32m"latin"[39m][33m,[39m[0m
+Line 75: [0m [90m 8 |[39m })[33m;[39m[0m
+Line 76: [91m[1m​[22m[39m
+Line 77: [91m[1m"build.command" failed                                        [22m[39m
+Line 78: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 79: ​
+Line 80:   [31m[1mError message[22m[39m
+Line 81:   Command failed with exit code 1: npm run build
+Line 82: ​
+Line 83:   [31m[1mError location[22m[39m
+Line 84:   In Build command from Netlify app:
+Line 85:   npm run build
+Line 86: ​
+Line 87:   [31m[1mResolved config[22m[39m
+Line 88:   build:
+Line 89:     command: npm run build
+Line 90:     commandOrigin: ui
+Line 91:     environment:
+Line 92:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 93:       - NEXT_PUBLIC_SUPABASE_URL
+Line 94:       - SUPABASE_SERVICE_ROLE_KEY
+Line 95:     publish: /opt/build/repo/.next
+Line 96:     publishOrigin: ui
+Line 97:   plugins:
+Line 98:     - inputs: {}
+Line 99:       origin: ui
+Line 100:       package: "@netlify/plugin-nextjs"
+Line 101: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 102: Failing build: Failed to build site
+Line 103: Finished processing build request in 33.348s
