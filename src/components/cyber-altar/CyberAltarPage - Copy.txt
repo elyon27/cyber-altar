@@ -1,296 +1,349 @@
-// ==============================
-// File: components/cyber-altar/CyberAltarPage.tsx
-// ==============================
-'use client';
+'use client'
 
-import { useEffect, useMemo, useState } from 'react';
-import type { Screen, UserRecord } from '@/components/cyber-altar/types';
-import { ALTAR_IMAGES, CANDLE_DURATION_MS, CROSS_IMAGE } from '@/components/cyber-altar/constants';
-import { formatRemaining } from '@/components/cyber-altar/utils';
-import SiteHeader from '@/components/cyber-altar/siteheader';
-import { MainMenu } from '@/components/cyber-altar/mainmenu';
-import { SignupForm } from '@/components/cyber-altar/signupform';
-import { SigninForm } from '@/components/cyber-altar/signinform';
-import { AltarForm } from '@/components/cyber-altar/altarform';
-import HolyPlace from '@/components/cyber-altar/holyplace';
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-const SESSION_KEY = 'cyber-altar-session-nickname';
+type CyberAltarPageProps = {
+  slug: string
+}
 
-export default function CyberAltarPage() {
-  const [screen, setScreen] = useState<Screen>('menu');
-  const [currentUser, setCurrentUser] = useState<UserRecord | null>(null);
-  const [nickname, setNickname] = useState('');
-  const [email, setEmail] = useState('');
-  const [prayer, setPrayer] = useState('');
-  const [selectedAltar, setSelectedAltar] = useState(ALTAR_IMAGES[0]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [now, setNow] = useState(Date.now());
+type PrayerEntry = {
+  id: string
+  text: string
+  createdAt: string
+}
+
+export default function CyberAltarPage({ slug }: CyberAltarPageProps) {
+  const router = useRouter()
+
+  const [prayer, setPrayer] = useState('')
+  const [prayers, setPrayers] = useState<PrayerEntry[]>([])
+  const [candleLit, setCandleLit] = useState(false)
+  const [candleCount, setCandleCount] = useState(0)
+  const [pilgrimName, setPilgrimName] = useState('Pilgrim')
 
   useEffect(() => {
-    const savedNickname = window.localStorage.getItem(SESSION_KEY);
-    if (!savedNickname) return;
+    const storedPrayers = localStorage.getItem(`altar_prayers_${slug}`)
+    const storedCandleCount = localStorage.getItem(`altar_candle_count_${slug}`)
+    const storedPilgrimName =
+      localStorage.getItem('cyber_altar_username') ||
+      localStorage.getItem('altar_nickname') ||
+      localStorage.getItem('pilgrimName')
 
-    const restore = async () => {
+    if (storedPilgrimName && storedPilgrimName.trim()) {
+      setPilgrimName(storedPilgrimName.trim())
+    }
+
+    if (storedPrayers) {
       try {
-        const response = await fetch(`/api/altar/profile/${encodeURIComponent(savedNickname)}`);
-        const payload = await response.json();
-        if (!response.ok) return;
+        const parsed = JSON.parse(storedPrayers)
 
-        setCurrentUser(payload.profile);
-        setNickname(payload.profile.nickname);
-        setEmail(payload.profile.email || '');
-        setPrayer(payload.profile.prayer || '');
-        setSelectedAltar(payload.profile.altarImage || ALTAR_IMAGES[0]);
-        setScreen('altarForm');
-      } catch {
-        // silent restore failure
+        const normalized: PrayerEntry[] = parsed.map((item: any, index: number) => {
+          if (typeof item === 'string') {
+            return {
+              id: `legacy-${index}-${Date.now()}`,
+              text: item,
+              createdAt: new Date().toISOString(),
+            }
+          }
+
+          return {
+            id: item.id || `restored-${index}-${Date.now()}`,
+            text: item.text || '',
+            createdAt: item.createdAt || new Date().toISOString(),
+          }
+        })
+
+        setPrayers(normalized)
+        localStorage.setItem(`altar_prayers_${slug}`, JSON.stringify(normalized))
+      } catch (error) {
+        console.error('Failed to load stored prayers:', error)
+        setPrayers([])
       }
-    };
-
-    restore();
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 30000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const candleActive = !!(
-    currentUser?.candleLitAt &&
-    currentUser?.candleExpireAt &&
-    new Date(currentUser.candleExpireAt).getTime() > now
-  );
-
-  const remainingMs = currentUser?.candleExpireAt
-    ? new Date(currentUser.candleExpireAt).getTime() - now
-    : 0;
-
-  const progress = currentUser?.candleLitAt && currentUser?.candleExpireAt
-    ? Math.max(
-        0,
-        Math.min(
-          1,
-          (new Date(currentUser.candleExpireAt).getTime() - now) /
-            (new Date(currentUser.candleExpireAt).getTime() -
-              new Date(currentUser.candleLitAt).getTime()),
-        ),
-      )
-    : 0;
-
-  const candleHeightPercent = candleActive ? Math.max(10, Math.round(progress * 100)) : 10;
-  const remainingText = candleActive
-    ? `Burning time remaining: ${formatRemaining(remainingMs)}`
-    : 'The candle is currently unlighted.';
-
-  function resetForMenu() {
-    setError('');
-    setLoading(false);
-    setScreen('menu');
-  }
-
-  function rememberSession(nick: string) {
-    window.localStorage.setItem(SESSION_KEY, nick);
-  }
-
-  async function handleSignup() {
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/altar/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname, email }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        setError(payload.error || 'Failed to sign up.');
-        return;
-      }
-
-      setCurrentUser(payload.profile);
-      setNickname(payload.profile.nickname);
-      setEmail(payload.profile.email || '');
-      setPrayer(payload.profile.prayer || '');
-      setSelectedAltar(payload.profile.altarImage || ALTAR_IMAGES[0]);
-      rememberSession(payload.profile.nickname);
-      setScreen('altarForm');
-    } catch {
-      setError('Failed to sign up.');
-    } finally {
-      setLoading(false);
     }
+
+    if (storedCandleCount) {
+      const parsedCount = Number(storedCandleCount)
+      setCandleCount(Number.isNaN(parsedCount) ? 0 : parsedCount)
+      setCandleLit(parsedCount > 0)
+    }
+  }, [slug])
+
+  const submitPrayer = () => {
+    const trimmedPrayer = prayer.trim()
+    if (!trimmedPrayer) return
+
+    const newPrayer: PrayerEntry = {
+      id: crypto.randomUUID(),
+      text: trimmedPrayer,
+      createdAt: new Date().toISOString(),
+    }
+
+    const updatedPrayers = [newPrayer, ...prayers]
+    setPrayers(updatedPrayers)
+    localStorage.setItem(`altar_prayers_${slug}`, JSON.stringify(updatedPrayers))
+    setPrayer('')
   }
 
-  async function handleSignin() {
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/altar/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        setError(payload.error || 'Failed to sign in.');
-        return;
-      }
-
-      setCurrentUser(payload.profile);
-      setNickname(payload.profile.nickname);
-      setEmail(payload.profile.email || '');
-      setPrayer(payload.profile.prayer || '');
-      setSelectedAltar(payload.profile.altarImage || ALTAR_IMAGES[0]);
-      rememberSession(payload.profile.nickname);
-      setScreen('altarForm');
-    } catch {
-      setError('Failed to sign in.');
-    } finally {
-      setLoading(false);
-    }
+  const lightCandle = () => {
+    const updatedCount = candleCount + 1
+    setCandleLit(true)
+    setCandleCount(updatedCount)
+    localStorage.setItem(`altar_candle_count_${slug}`, String(updatedCount))
   }
 
-  async function handleProceedToHolyPlace() {
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/altar/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nickname,
-          prayer,
-          altarImage: selectedAltar,
-        }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        setError(payload.error || 'Failed to save altar form.');
-        return;
-      }
-
-      setCurrentUser(payload.profile);
-      rememberSession(payload.profile.nickname);
-      setScreen('holyPlace');
-    } catch {
-      setError('Failed to save altar form.');
-    } finally {
-      setLoading(false);
-    }
+  const formatDate = (isoDate: string) => {
+    return new Date(isoDate).toLocaleString('en-PH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
   }
 
-  async function handleLightCandle() {
-    if (!currentUser) return;
+  const goBackToAltarSelection = () => {
+    router.push('/altar')
+  }
 
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/altar/light', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname: currentUser.nickname }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        setError(payload.error || 'Failed to light candle.');
-        return;
-      }
-
-      setCurrentUser(payload.profile);
-      setNow(Date.now());
-    } catch {
-      setError('Failed to light candle.');
-    } finally {
-      setLoading(false);
-    }
+  const exitToCrownMind = () => {
+    window.location.href = 'https://crownmind.netlify.app'
   }
 
   return (
-    <main className="min-h-screen bg-blue-950 px-4 py-8 text-white">
-      <div className="mx-auto max-w-6xl rounded-3xl border border-blue-700/60 bg-blue-900/40 p-6 shadow-2xl backdrop-blur">
-        <SiteHeader />
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#1e3a8a',
+        color: 'white',
+        padding: '40px 20px 80px',
+        textAlign: 'center',
+      }}
+    >
+      <h1 style={{ marginBottom: '8px' }}>The Holy Place</h1>
+      <p style={{ marginTop: 0, fontSize: '18px', fontWeight: 600 }}>
+        Pilgrim: {pilgrimName}
+      </p>
+      <p style={{ marginTop: '6px' }}>Altar: {slug}</p>
 
-        {error && screen === 'menu' && <p className="mb-4 text-sm text-rose-300">{error}</p>}
+      <div
+        style={{
+          marginTop: '20px',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <button
+          onClick={goBackToAltarSelection}
+          style={{
+            padding: '12px 20px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: '15px',
+          }}
+        >
+          Return to Altar Selection
+        </button>
 
-        {screen === 'menu' && (
-          <MainMenu
-            onSignup={() => {
-              setError('');
-              setNickname('');
-              setEmail('');
-              setPrayer('');
-              setSelectedAltar(ALTAR_IMAGES[0]);
-              setScreen('signup');
+        <button
+          onClick={exitToCrownMind}
+          style={{
+            padding: '12px 20px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: '15px',
+          }}
+        >
+          Exit to CrownMind
+        </button>
+      </div>
+
+      <div
+        style={{
+          marginTop: '40px',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '40px',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
+        <img
+          src="/images/cross.png"
+          alt="Cross"
+          width="120"
+          style={{ objectFit: 'contain' }}
+        />
+
+        <img
+          src={`/altar/${slug}.jpg`}
+          alt="Altar"
+          width="260"
+          style={{ objectFit: 'cover', borderRadius: '12px' }}
+        />
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
+          <img
+            src="/images/candle.jpg"
+            alt="Candle"
+            width="120"
+            style={{
+              opacity: candleLit ? 1 : 0.7,
+              transition: '0.3s ease',
+              objectFit: 'contain',
             }}
-            onSignin={() => {
-              setError('');
-              setNickname('');
-              setScreen('signin');
+          />
+
+          <div
+            style={{
+              fontSize: '14px',
+              background: 'rgba(255,255,255,0.12)',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              minWidth: '140px',
+            }}
+          >
+            Lit {candleCount} time{candleCount === 1 ? '' : 's'}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: '42px', display: 'flex', justifyContent: 'center' }}>
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '520px',
+            border: '2px solid rgba(255,255,255,0.45)',
+            borderRadius: '12px',
+            padding: '14px',
+            background: 'rgba(255,255,255,0.06)',
+            boxSizing: 'border-box',
+          }}
+        >
+          <label
+            htmlFor="prayer-box"
+            style={{
+              display: 'block',
+              textAlign: 'left',
+              marginBottom: '10px',
+              fontSize: '16px',
+              fontWeight: 600,
+            }}
+          >
+            Enter your prayer
+          </label>
+
+          <textarea
+            id="prayer-box"
+            value={prayer}
+            onChange={(e) => setPrayer(e.target.value)}
+            placeholder="Write your prayer here..."
+            style={{
+              width: '100%',
+              minHeight: '140px',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid rgba(255,255,255,0.25)',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+              fontSize: '15px',
             }}
           />
-        )}
 
-        {screen === 'signup' && (
-          <SignupForm
-            nickname={nickname}
-            email={email}
-            error={error}
-            loading={loading}
-            setNickname={setNickname}
-            setEmail={setEmail}
-            onSubmit={handleSignup}
-            onBack={resetForMenu}
-          />
-        )}
+          <div
+            style={{
+              marginTop: '16px',
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '12px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <button
+              onClick={submitPrayer}
+              style={{
+                padding: '12px 22px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '15px',
+              }}
+            >
+              Submit Prayer
+            </button>
 
-        {screen === 'signin' && (
-          <SigninForm
-            nickname={nickname}
-            error={error}
-            loading={loading}
-            setNickname={setNickname}
-            onSubmit={handleSignin}
-            onBack={resetForMenu}
-          />
-        )}
+            <button
+              onClick={lightCandle}
+              style={{
+                padding: '12px 22px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '15px',
+              }}
+            >
+              Light Candle
+            </button>
+          </div>
+        </div>
+      </div>
 
-        {screen === 'altarForm' && (
-          <AltarForm
-            nickname={nickname}
-            prayer={prayer}
-            selectedAltar={selectedAltar}
-            altarImages={ALTAR_IMAGES}
-            error={error}
-            loading={loading}
-            setPrayer={setPrayer}
-            setSelectedAltar={setSelectedAltar}
-            onProceed={handleProceedToHolyPlace}
-            onBack={resetForMenu}
-          />
-        )}
+      <div
+        style={{
+          marginTop: '42px',
+          maxWidth: '720px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}
+      >
+        <h2 style={{ marginBottom: '18px' }}>Former Prayers</h2>
 
-        {screen === 'holyPlace' && currentUser && (
-          <HolyPlace
-            currentUser={currentUser}
-            crossImage={CROSS_IMAGE}
-            candleActive={candleActive}
-            candleHeightPercent={candleHeightPercent}
-            remainingText={remainingText}
-            loading={loading}
-            onLightCandle={handleLightCandle}
-            onBack={resetForMenu}
-          />
+        {prayers.length === 0 ? (
+          <p style={{ opacity: 0.85 }}>No prayers yet.</p>
+        ) : (
+          prayers.map((entry, index) => (
+            <div
+              key={entry.id || `${entry.createdAt}-${index}`}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                padding: '14px 18px',
+                marginTop: '12px',
+                borderRadius: '10px',
+                textAlign: 'left',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '13px',
+                  opacity: 0.8,
+                  marginBottom: '8px',
+                }}
+              >
+                {formatDate(entry.createdAt)}
+              </div>
+
+              <div style={{ fontSize: '18px', lineHeight: 1.5 }}>
+                {entry.text}
+              </div>
+            </div>
+          ))
         )}
       </div>
-    </main>
-  );
+    </div>
+  )
 }

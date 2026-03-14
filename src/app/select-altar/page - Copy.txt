@@ -1,0 +1,53 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import AltarSelectionForm from '@/components/cyber-altar/AltarSelectionForm';
+
+export default function SelectAltarPage() {
+  const router = useRouter();
+
+  const [username] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('cyber_altar_username') || 'Pilgrim';
+    }
+    return 'Pilgrim';
+  });
+
+  const [selectedAltar, setSelectedAltar] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('cyber_altar_selected_altar') || 'al001';
+    }
+    return 'al001';
+  });
+
+  const handleSelectAltar = (altarCode: string) => {
+    setSelectedAltar(altarCode);
+    localStorage.setItem('cyber_altar_selected_altar', altarCode);
+  };
+
+  const handleProceed = () => {
+    localStorage.setItem('cyber_altar_selected_altar', selectedAltar);
+    router.push('/holy-place');
+  };
+
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-950 via-slate-950 to-black">
+      <AltarSelectionForm
+        username={username}
+        selectedAltar={selectedAltar}
+        onSelectAltar={handleSelectAltar}
+      />
+
+      <div className="mx-auto max-w-6xl px-4 pb-10">
+        <button
+          type="button"
+          onClick={handleProceed}
+          className="w-full rounded-xl bg-yellow-500 px-4 py-3 font-semibold text-black hover:bg-yellow-400 transition"
+        >
+          Proceed to the Holy Place
+        </button>
+      </div>
+    </main>
+  );
+}
