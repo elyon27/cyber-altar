@@ -1,88 +1,103 @@
 The Netlify deploy errored, with the following guidance provided:
 
-Diagnosis  
-- The build fails because Next.js refuses to load `next.config.ts`; the runtime only supports `next.config.js` (or `.mjs`). See [line 65](#L65).
+**Diagnosis**
 
-Solution  
-- Rename `/next.config.ts` to `next.config.js` (or `next.config.mjs`) and update the file to export the config in JavaScript (CommonJS or ES module) instead of TypeScript. For example:  
-  ```js
-  // next.config.js
-  const nextConfig = {
-    // existing config options
-  };
+- [line 68](#L68) and [line 71](#L71) show `next/font` reporting the unknown fonts `Geist` and `Geist Mono`, meaning the layout is importing font identifiers that Next.js doesn’t ship with.
+- [line 73](#L73) shows Webpack failing to resolve `@supabase/ssr`, so the dependency isn’t available during the build.
+- [line 76](#L76) shows Webpack failing to resolve `@/components/cyber-altar/HolyPlace`, so either the file is missing or the `@/` alias is not configured.
 
-  module.exports = nextConfig;
+**Solution**
+
+- Replace the unsupported `next/font` imports with a supported font source. For Geist, add the official package and update the imports, e.g.:
+
+  ```bash
+  npm install geist
   ```
-- Remove any TypeScript-specific syntax (types, interfaces, enums) from the config file so that it executes as plain JavaScript during the build.  
-- Commit the renamed file and redeploy.
+
+  ```ts
+  // src/app/layout.tsx
+  import { GeistSans } from 'geist/font/sans';
+  import { GeistMono } from 'geist/font/mono';
+  ```
+
+  Then use `GeistSans` and `GeistMono` in your layout. Alternatively, switch to a built-in Google font or provide local font files via `next/font/local`.
+
+- Verify `@supabase/ssr` is listed in your `package.json`. If it isn’t, add it to your dependencies:
+
+  ```bash
+  npm install @supabase/ssr
+  ```
+
+  Commit the updated lockfile so Netlify can install it.
+
+- Confirm that `src/components/cyber-altar/HolyPlace.(ts|tsx)` exists in the repo (case-sensitive). If it does, configure the `@/*` alias (or adjust the import). For example, add the following to `tsconfig.json`:
+
+  ```json
+  {
+    "compilerOptions": {
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["src/*"]
+      }
+    }
+  }
+  ```
+
+  Restart your local dev server and commit the updated `tsconfig.json` so the alias works during the Netlify build.
 
 The relevant error logs are:
 
-Line 2: Fetching cached dependencies
-Line 3: Starting to download cache of 265.6MB (Last modified: 2026-03-14 11:30:31 +0000 UTC)
-Line 4: Downloaded cache in 692ms
-Line 5: Extracted cache in 2.343s
-Line 6: Fetched cache in 3.095s
-Line 7: Starting to prepare the repo for build
-Line 8: Preparing Git Reference refs/heads/main
-Line 9: Installing dependencies
-Line 10: [33mmise[0m [33mWARN[0m  python is defined in /opt/build/repo/.mise.toml which overrides the global config (~/.config/mise/c
-Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
-Line 12: [31mmise[0m [31mERROR[0m python is a mise bin however it is not currently active. Use `mise use` to activate it in this dire
-Line 13: [31mmise[0m [31mERROR[0m [2mRun with --verbose or MISE_VERBOSE=1 for more information[0m
-Line 14: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
-Line 15: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
-Line 16: Attempting Node.js version '20.12.2' from .node-version
-Line 17: Downloading and installing node v20.12.2...
-Line 18: Downloading https://nodejs.org/dist/v20.12.2/node-v20.12.2-linux-x64.tar.xz...
-Line 19: Computing checksum with sha256sum
-Line 20: Checksums matched!
-Line 21: Now using node v20.12.2 (npm v10.5.0)
-Line 22: Enabling Node.js Corepack
-Line 23: No npm workspaces detected
-Line 54: [36m[1m​[22m[39m
-Line 55: [36m[1m❯ Using Next.js Runtime - v5.15.9[22m[39m
-Line 56: Next.js cache restored
-Line 57: [96m[1m​[22m[39m
-Line 58: [96m[1mBuild command from Netlify app                                [22m[39m
-Line 59: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 60: ​
-Line 61: [36m$ npm run build[39m
-Line 62: > cyber-altar@1.0.0 build
-Line 63: > next build
-Line 64: > Build error occurred
-Line 65: Error: Configuring Next.js via 'next.config.ts' is not supported. Please replace the file with 'next.config.js' or 'next.config.
-Line 66:     at loadConfig [90m(/opt/build/repo/[39mnode_modules/[4mnext[24m/dist/server/config.js:787:19[90m)[39m
-Line 67:     at async Span.traceAsyncFn [90m(/opt/build/repo/[39mnode_modules/[4mnext[24m/dist/trace/trace.js:154:20[90m)[39m
-Line 68:     at async [90m/opt/build/repo/[39mnode_modules/[4mnext[24m/dist/build/index.js:372:28
-Line 69:     at async Span.traceAsyncFn [90m(/opt/build/repo/[39mnode_modules/[4mnext[24m/dist/trace/trace.js:154:20[90m)[39m
-Line 70:     at async build [90m(/opt/build/repo/[39mnode_modules/[4mnext[24m/dist/build/index.js:366:9[90m)[39m
-Line 71: [91m[1m​[22m[39m
-Line 72: [91m[1m"build.command" failed                                        [22m[39m
-Line 73: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 74: ​
-Line 75:   [31m[1mError message[22m[39m
-Line 76:   Command failed with exit code 1: npm run build
-Line 77: ​
-Line 78:   [31m[1mError location[22m[39m
-Line 79:   In Build command from Netlify app:
-Line 80:   npm run build
-Line 81: ​
-Line 82:   [31m[1mResolved config[22m[39m
-Line 83:   build:
-Line 84:     command: npm run build
-Line 85:     commandOrigin: ui
-Line 86:     environment:
-Line 87:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 88:       - NEXT_PUBLIC_SUPABASE_URL
-Line 89:       - SUPABASE_SERVICE_ROLE_KEY
-Line 90:     publish: /opt/build/repo/.next
-Line 91:     publishOrigin: ui
-Line 92:   plugins:
-Line 93:     - inputs: {}
-Line 94:       origin: ui
-Line 95:       package: "@netlify/plugin-nextjs"
-Line 96: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 97: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 98: Failing build: Failed to build site
-Line 99: Finished processing build request in 22.394s
+Line 54: [96m[1m​[22m[39m
+Line 55: [96m[1mBuild command from Netlify app                                [22m[39m
+Line 56: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 57: ​
+Line 58: [36m$ npm run build[39m
+Line 59: > cyber-altar@1.0.0 build
+Line 60: > next build
+Line 61:   [1m[38;2;173;127;168m▲ Next.js 14.2.5[39m[22m
+Line 62:  [37m[1m [22m[39m Creating an optimized production build ...
+Line 63:  [33m[1m⚠[22m[39m Found lockfile missing swc dependencies, run next locally to automatically patch
+Line 64: [31mFailed to compile.
+Line 65: [39m
+Line 66: src/app/layout.tsx
+Line 67: `next/font` error:
+Line 68: Unknown font `Geist`
+Line 69: src/app/layout.tsx
+Line 70: `next/font` error:
+Line 71: Unknown font `Geist Mono`
+Line 72: ./src/app/auth/callback/route.ts
+Line 73: [31m[1mModule not found[22m[39m: Can't resolve '[32m@supabase/ssr[39m'
+Line 74: https://nextjs.org/docs/messages/module-not-found
+Line 75: ./src/app/holy-place/page.tsx
+Line 76: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/cyber-altar/HolyPlace[39m'
+Line 77: https://nextjs.org/docs/messages/module-not-found
+Line 78: > Build failed because of webpack errors
+Line 79: [91m[1m​[22m[39m
+Line 80: [91m[1m"build.command" failed                                        [22m[39m
+Line 81: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 82: ​
+Line 83:   [31m[1mError message[22m[39m
+Line 84:   Command failed with exit code 1: npm run build
+Line 85: ​
+Line 86:   [31m[1mError location[22m[39m
+Line 87:   In Build command from Netlify app:
+Line 88:   npm run build
+Line 89: ​
+Line 90:   [31m[1mResolved config[22m[39m
+Line 91:   build:
+Line 92:     command: npm run build
+Line 93:     commandOrigin: ui
+Line 94:     environment:
+Line 95:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 96:       - NEXT_PUBLIC_SUPABASE_URL
+Line 97:       - SUPABASE_SERVICE_ROLE_KEY
+Line 98:     publish: /opt/build/repo/.next
+Line 99:     publishOrigin: ui
+Line 100:   plugins:
+Line 101:     - inputs: {}
+Line 102:       origin: ui
+Line 103:       package: "@netlify/plugin-nextjs"
+Line 104: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 105: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 106: Failing build: Failed to build site
+Line 107: Finished processing build request in 25.985s
