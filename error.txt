@@ -1,60 +1,63 @@
 The Netlify deploy errored, with the following guidance provided:
 
-Diagnosis:
-- [line 66](#L66) shows the build failing with `Module not found: Can't resolve '@/components/cyber-altar/HolyPlace'`, so `src/app/holy-place/page.tsx` imports a module that doesn't exist at that path or name.
+**Diagnosis**
 
-Solution:
-1. Confirm whether the component file actually exists (e.g., `src/components/cyber-altar/HolyPlace.tsx`, `src/components/cyber-altar/HolyPlace/index.tsx`, etc.) and that the casing matches exactly—remember Netlify’s Linux builds are case-sensitive.
-2. If the file exists under a different name or directory, update the import in `src/app/holy-place/page.tsx` to match the real path, for example:
+- The build fails because Next.js cannot resolve the import `@/components/cyber-altar/HolyPlace` in `src/app/holy-place/page.tsx` ([line 64](#L64)-[line 66](#L66)). This indicates the referenced component file either does not exist at that path, has a different name/casing, or was not committed.
+
+**Solution**
+
+1. Verify that `src/components/cyber-altar/HolyPlace.tsx` (or `.tsx/.ts`) exists in the repository and is committed.
+2. If the file exists but the casing or directory structure differs (e.g., `holyPlace.tsx`, different folder name), update the import in `src/app/holy-place/page.tsx` so the path exactly matches the filesystem case and location:
    ```tsx
-   import HolyPlace from '@/components/cyber-altar/holy-place/HolyPlace';
+   import HolyPlace from '@/components/cyber-altar/HolyPlace';
    ```
-3. If the file is missing altogether, add it to `src/components/cyber-altar/` (ensuring it’s committed to the repo) before rebuilding.
+3. If the component file is missing, add it (or move it to the referenced path) and commit the change so Netlify can fetch it during the build.
+
+After correcting the import path or providing the missing component, trigger a new build.
 
 The relevant error logs are:
 
-Line 53: Next.js cache restored
-Line 54: [96m[1m​[22m[39m
-Line 55: [96m[1mBuild command from Netlify app                                [22m[39m
-Line 56: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 57: ​
-Line 58: [36m$ npm run build[39m
-Line 59: > cyber-altar@1.0.0 build
-Line 60: > next build
-Line 61:   [1m[38;2;173;127;168m▲ Next.js 14.2.5[39m[22m
-Line 62:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 63: [31mFailed to compile.
-Line 64: [39m
-Line 65: ./src/app/holy-place/page.tsx
-Line 66: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/cyber-altar/HolyPlace[39m'
-Line 67: https://nextjs.org/docs/messages/module-not-found
-Line 68: > Build failed because of webpack errors
-Line 69: [91m[1m​[22m[39m
-Line 70: [91m[1m"build.command" failed                                        [22m[39m
-Line 71: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 72: ​
-Line 73:   [31m[1mError message[22m[39m
-Line 74:   Command failed with exit code 1: npm run build
-Line 75: ​
-Line 76:   [31m[1mError location[22m[39m
-Line 77:   In Build command from Netlify app:
-Line 78:   npm run build
-Line 79: ​
-Line 80:   [31m[1mResolved config[22m[39m
-Line 81:   build:
-Line 82:     command: npm run build
-Line 83:     commandOrigin: ui
-Line 84:     environment:
-Line 85:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 86:       - NEXT_PUBLIC_SUPABASE_URL
-Line 87:       - SUPABASE_SERVICE_ROLE_KEY
-Line 88:     publish: /opt/build/repo/.next
-Line 89:     publishOrigin: ui
-Line 90:   plugins:
-Line 91:     - inputs: {}
-Line 92:       origin: ui
-Line 93:       package: "@netlify/plugin-nextjs"
-Line 94: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 95: Failing build: Failed to build site
-Line 96: Finished processing build request in 24.579s
-Line 97: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 52: [96m[1m​[22m[39m
+Line 53: [96m[1mBuild command from Netlify app                                [22m[39m
+Line 54: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 55: ​
+Line 56: [36m$ npm run build[39m
+Line 57: > cyber-altar@1.0.0 build
+Line 58: > next build
+Line 59: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
+Line 60:   [1m[38;2;173;127;168m▲ Next.js 14.2.5[39m[22m
+Line 61:  [37m[1m [22m[39m Creating an optimized production build ...
+Line 62: [31mFailed to compile.
+Line 63: [39m
+Line 64: ./src/app/holy-place/page.tsx
+Line 65: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/cyber-altar/HolyPlace[39m'
+Line 66: https://nextjs.org/docs/messages/module-not-found
+Line 67: > Build failed because of webpack errors
+Line 68: [91m[1m​[22m[39m
+Line 69: [91m[1m"build.command" failed                                        [22m[39m
+Line 70: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 71: ​
+Line 72:   [31m[1mError message[22m[39m
+Line 73:   Command failed with exit code 1: npm run build
+Line 74: ​
+Line 75:   [31m[1mError location[22m[39m
+Line 76:   In Build command from Netlify app:
+Line 77:   npm run build
+Line 78: ​
+Line 79:   [31m[1mResolved config[22m[39m
+Line 80:   build:
+Line 81:     command: npm run build
+Line 82:     commandOrigin: ui
+Line 83:     environment:
+Line 84:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 85:       - NEXT_PUBLIC_SUPABASE_URL
+Line 86:       - SUPABASE_SERVICE_ROLE_KEY
+Line 87:     publish: /opt/build/repo/.next
+Line 88:     publishOrigin: ui
+Line 89:   plugins:
+Line 90:     - inputs: {}
+Line 91:       origin: ui
+Line 92:       package: "@netlify/plugin-nextjs"
+Line 93: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 94: Failing build: Failed to build site
+Line 95: Finished processing build request in 22.94s
