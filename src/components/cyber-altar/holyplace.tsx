@@ -1,38 +1,43 @@
 'use client'
 
-import Image from "next/image"
+type HolyPlaceProps = {
+  nickname: string
+  prayer: string
+  altarImage: string
+}
 
-export default function HolyPlace() {
+export default function HolyPlace({
+  nickname,
+  prayer,
+  altarImage,
+}: HolyPlaceProps) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-blue-900 text-white p-6">
-      
-      <h1 className="text-4xl font-bold mb-6">
-        🕊 The Holy Place
+    <main className="min-h-screen bg-blue-950 text-white flex flex-col items-center justify-center p-8">
+
+      <h1 className="text-3xl font-bold mb-6">
+        The Holy Place
       </h1>
 
+      <p className="mb-4 text-lg">
+        Pilgrim: <strong>{nickname}</strong>
+      </p>
+
       <div className="mb-6">
-        <Image
-          src="/images/altar/al001.jpg"
-          alt="Altar"
-          width={400}
-          height={400}
-          className="rounded-lg shadow-lg"
+        <img
+          src={altarImage}
+          alt="Selected Altar"
+          className="rounded-lg shadow-lg w-80"
         />
       </div>
 
-      <textarea
-        placeholder="Enter your prayer..."
-        className="w-full max-w-lg p-4 rounded text-black"
-      />
+      <div className="bg-black/30 p-6 rounded-lg max-w-xl text-center">
+        <p className="italic">"{prayer}"</p>
+      </div>
 
-      <button className="mt-4 px-6 py-3 bg-yellow-500 text-black rounded-lg font-semibold">
-        Submit Prayer
-      </button>
-
-      <button className="mt-4 px-6 py-3 bg-orange-500 text-black rounded-lg font-semibold">
+      <button className="mt-6 bg-yellow-500 text-black px-6 py-3 rounded-lg font-semibold">
         🕯 Light a Candle
       </button>
 
-    </div>
+    </main>
   )
 }

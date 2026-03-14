@@ -2,19 +2,26 @@ The Netlify deploy errored, with the following guidance provided:
 
 **Diagnosis**
 
-- The build stops during type checking because [line 67](#L67)-[line 75](#L75) reports a TypeScript error in `src/app/layout.tsx`: `GeistSans` (and `GeistMono`) are imported from `geist/font/*` and treated as callable functions. These exports are already configured `NextFontWithVariable` objects, so invoking them causes “Type 'NextFontWithVariable' has no call signatures.”
+`next build` fails during type checking because `PrayerClient.tsx` renders `<HolyPlace nickname={...} prayer={...} altarImage={...} />`, but the `HolyPlace` component’s props are not typed to accept those attributes. TypeScript therefore treats `<HolyPlace />` as an intrinsic element with no `nickname`, `prayer`, or `altarImage` props, which triggers the error.
 
 **Solution**
 
-- Update `src/app/layout.tsx` so that the imported fonts are used directly, without calling them. For example:
-  ```tsx
-  import { GeistSans, GeistMono } from "geist/font";
+Update `src/components/cyber-altar/HolyPlace.tsx` so the component explicitly declares the props it expects. For example:
 
-  const geistSans = GeistSans;
-  const geistMono = GeistMono;
-  ```
-  (You can also reference `GeistSans.variable` and `GeistMono.variable` directly in your markup without reassigning, if you prefer.)
-- Run `npm run build` locally to confirm the fix before redeploying to Netlify.
+```tsx
+// src/components/cyber-altar/HolyPlace.tsx
+type HolyPlaceProps = {
+  nickname: string;
+  prayer: string;
+  altarImage: string;
+};
+
+export default function HolyPlace({ nickname, prayer, altarImage }: HolyPlaceProps) {
+  // existing component code...
+}
+```
+
+or, if the component is already defined, add the prop interface and destructuring. Re-run the build afterwards; it should succeed once TypeScript recognises that `HolyPlace` accepts those props.
 
 The relevant error logs are:
 
@@ -30,42 +37,42 @@ Line 63:  [32m[1m✓[22m[39m Compiled successfully
 Line 64:  [37m[1m [22m[39m Linting and checking validity of types ...
 Line 65: [31mFailed to compile.
 Line 66: [39m
-Line 67: [36m./src/app/layout.tsx[39m:[33m5[39m:[33m19[39m
-Line 68: [31m[1mType error[22m[39m: This expression is not callable.
-Line 69:   Type 'NextFontWithVariable' has no call signatures.
-Line 70: [0m [90m 3 |[39m [36mimport[39m { [33mGeistMono[39m } [36mfrom[39m [32m"geist/font/mono"[39m[0m
-Line 71: [0m [90m 4 |[39m[0m
-Line 72: [0m[31m[1m>[22m[39m[90m 5 |[39m [36mconst[39m geistSans [33m=[39m [33mGeistSans[39m({[0m
-Line 73: [0m [90m   |[39m                   [31m[1m^[22m[39m[0m
-Line 74: [0m [90m 6 |[39m   variable[33m:[39m [32m"--font-geist-sans"[39m[33m,[39m[0m
-Line 75: [0m [90m 7 |[39m   subsets[33m:[39m [[32m"latin"[39m][33m,[39m[0m
-Line 76: [0m [90m 8 |[39m })[0m
-Line 77: [91m[1m​[22m[39m
-Line 78: [91m[1m"build.command" failed                                        [22m[39m
-Line 79: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 80: ​
-Line 81:   [31m[1mError message[22m[39m
-Line 82:   Command failed with exit code 1: npm run build
-Line 83: ​
-Line 84:   [31m[1mError location[22m[39m
-Line 85:   In Build command from Netlify app:
-Line 86:   npm run build
-Line 87: ​
-Line 88:   [31m[1mResolved config[22m[39m
-Line 89:   build:
-Line 90:     command: npm run build
-Line 91:     commandOrigin: ui
-Line 92:     environment:
-Line 93:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 94:       - NEXT_PUBLIC_SUPABASE_URL
-Line 95:       - SUPABASE_SERVICE_ROLE_KEY
-Line 96:     publish: /opt/build/repo/.next
-Line 97:     publishOrigin: ui
-Line 98:   plugins:
-Line 99:     - inputs: {}
-Line 100:       origin: ui
-Line 101:       package: "@netlify/plugin-nextjs"
-Line 102: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 67: [36m./src/components/cyber-altar/PrayerClient.tsx[39m:[33m21[39m:[33m9[39m
+Line 68: [31m[1mType error[22m[39m: Type '{ nickname: string; prayer: string; altarImage: string; }' is not assignable to type 'Intri
+Line 69:   Property 'nickname' does not exist on type 'IntrinsicAttributes'.
+Line 70: [0m [90m 19 |[39m     [36mreturn[39m ([0m
+Line 71: [0m [90m 20 |[39m       [33m<[39m[33mHolyPlace[39m[0m
+Line 72: [0m[31m[1m>[22m[39m[90m 21 |[39m         nickname[33m=[39m{nickname}[0m
+Line 73: [0m [90m    |[39m         [31m[1m^[22m[39m[0m
+Line 74: [0m [90m 22 |[39m         prayer[33m=[39m{prayer}[0m
+Line 75: [0m [90m 23 |[39m         altarImage[33m=[39m{altarImage}[0m
+Line 76: [0m [90m 24 |[39m       [33m/[39m[33m>[39m[0m
+Line 77: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 78: [91m[1m​[22m[39m
+Line 79: [91m[1m"build.command" failed                                        [22m[39m
+Line 80: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 81: ​
+Line 82:   [31m[1mError message[22m[39m
+Line 83:   Command failed with exit code 1: npm run build
+Line 84: ​
+Line 85:   [31m[1mError location[22m[39m
+Line 86:   In Build command from Netlify app:
+Line 87:   npm run build
+Line 88: ​
+Line 89:   [31m[1mResolved config[22m[39m
+Line 90:   build:
+Line 91:     command: npm run build
+Line 92:     commandOrigin: ui
+Line 93:     environment:
+Line 94:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 95:       - NEXT_PUBLIC_SUPABASE_URL
+Line 96:       - SUPABASE_SERVICE_ROLE_KEY
+Line 97:     publish: /opt/build/repo/.next
+Line 98:     publishOrigin: ui
+Line 99:   plugins:
+Line 100:     - inputs: {}
+Line 101:       origin: ui
+Line 102:       package: "@netlify/plugin-nextjs"
 Line 103: Build failed due to a user error: Build script returned non-zero exit code: 2
 Line 104: Failing build: Failed to build site
-Line 105: Finished processing build request in 33.619s
+Line 105: Finished processing build request in 34.7s
