@@ -1,349 +1,83 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 
-type CyberAltarPageProps = {
-  slug: string
-}
+type PreviousAltarItem = {
+  altar_slug: string;
+  created_at?: string;
+};
 
-type PrayerEntry = {
-  id: string
-  text: string
-  createdAt: string
-}
+type Props = {
+  username: string;
+  selectedAltarSlug: string;
+  previousAltars: PreviousAltarItem[];
+  onSelectCurrentAltar?: (altarSlug: string) => void;
+};
 
-export default function CyberAltarPage({ slug }: CyberAltarPageProps) {
-  const router = useRouter()
+export default function PreviousAltarList({
+  username,
+  selectedAltarSlug,
+  previousAltars,
+  onSelectCurrentAltar,
+}: Props) {
+  const router = useRouter();
 
-  const [prayer, setPrayer] = useState('')
-  const [prayers, setPrayers] = useState<PrayerEntry[]>([])
-  const [candleLit, setCandleLit] = useState(false)
-  const [candleCount, setCandleCount] = useState(0)
-  const [pilgrimName, setPilgrimName] = useState('Pilgrim')
+  const uniqueAltars = useMemo(() => {
+    const seen = new Set<string>();
+    return previousAltars.filter((item) => {
+      if (!item?.altar_slug || seen.has(item.altar_slug)) return false;
+      seen.add(item.altar_slug);
+      return true;
+    });
+  }, [previousAltars]);
 
-  useEffect(() => {
-    const storedPrayers = localStorage.getItem(`altar_prayers_${slug}`)
-    const storedCandleCount = localStorage.getItem(`altar_candle_count_${slug}`)
-    const storedPilgrimName =
-      localStorage.getItem('cyber_altar_username') ||
-      localStorage.getItem('altar_nickname') ||
-      localStorage.getItem('pilgrimName')
+  const handleOpenAltar = (altarSlug: string) => {
+    if (!altarSlug || !username) return;
 
-    if (storedPilgrimName && storedPilgrimName.trim()) {
-      setPilgrimName(storedPilgrimName.trim())
+    localStorage.setItem('cyber_altar_username', username);
+    localStorage.setItem('cyber_altar_selected_slug', altarSlug);
+
+    if (onSelectCurrentAltar) {
+      onSelectCurrentAltar(altarSlug);
     }
 
-    if (storedPrayers) {
-      try {
-        const parsed = JSON.parse(storedPrayers)
-
-        const normalized: PrayerEntry[] = parsed.map((item: any, index: number) => {
-          if (typeof item === 'string') {
-            return {
-              id: `legacy-${index}-${Date.now()}`,
-              text: item,
-              createdAt: new Date().toISOString(),
-            }
-          }
-
-          return {
-            id: item.id || `restored-${index}-${Date.now()}`,
-            text: item.text || '',
-            createdAt: item.createdAt || new Date().toISOString(),
-          }
-        })
-
-        setPrayers(normalized)
-        localStorage.setItem(`altar_prayers_${slug}`, JSON.stringify(normalized))
-      } catch (error) {
-        console.error('Failed to load stored prayers:', error)
-        setPrayers([])
-      }
-    }
-
-    if (storedCandleCount) {
-      const parsedCount = Number(storedCandleCount)
-      setCandleCount(Number.isNaN(parsedCount) ? 0 : parsedCount)
-      setCandleLit(parsedCount > 0)
-    }
-  }, [slug])
-
-  const submitPrayer = () => {
-    const trimmedPrayer = prayer.trim()
-    if (!trimmedPrayer) return
-
-    const newPrayer: PrayerEntry = {
-      id: crypto.randomUUID(),
-      text: trimmedPrayer,
-      createdAt: new Date().toISOString(),
-    }
-
-    const updatedPrayers = [newPrayer, ...prayers]
-    setPrayers(updatedPrayers)
-    localStorage.setItem(`altar_prayers_${slug}`, JSON.stringify(updatedPrayers))
-    setPrayer('')
-  }
-
-  const lightCandle = () => {
-    const updatedCount = candleCount + 1
-    setCandleLit(true)
-    setCandleCount(updatedCount)
-    localStorage.setItem(`altar_candle_count_${slug}`, String(updatedCount))
-  }
-
-  const formatDate = (isoDate: string) => {
-    return new Date(isoDate).toLocaleString('en-PH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    })
-  }
-
-  const goBackToAltarSelection = () => {
-    router.push('/altar')
-  }
-
-  const exitToCrownMind = () => {
-    window.location.href = 'https://crownmind.netlify.app'
-  }
+    router.push(`/altar/${altarSlug}?username=${encodeURIComponent(username)}`);
+  };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: '#1e3a8a',
-        color: 'white',
-        padding: '40px 20px 80px',
-        textAlign: 'center',
-      }}
-    >
-      <h1 style={{ marginBottom: '8px' }}>The Holy Place</h1>
-      <p style={{ marginTop: 0, fontSize: '18px', fontWeight: 600 }}>
-        Pilgrim: {pilgrimName}
-      </p>
-      <p style={{ marginTop: '6px' }}>Altar: {slug}</p>
+    <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-200">
+        Previously Chosen Altars
+      </h3>
 
-      <div
-        style={{
-          marginTop: '20px',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '12px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <button
-          onClick={goBackToAltarSelection}
-          style={{
-            padding: '12px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: '15px',
-          }}
-        >
-          Return to Altar Selection
-        </button>
+      {uniqueAltars.length === 0 ? (
+        <p className="text-sm text-slate-300">No previously chosen altar pictures yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {uniqueAltars.map((item) => {
+            const isActive = item.altar_slug === selectedAltarSlug;
 
-        <button
-          onClick={exitToCrownMind}
-          style={{
-            padding: '12px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: '15px',
-          }}
-        >
-          Exit to CrownMind
-        </button>
-      </div>
-
-      <div
-        style={{
-          marginTop: '40px',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '40px',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-        }}
-      >
-        <img
-          src="/images/cross.png"
-          alt="Cross"
-          width="120"
-          style={{ objectFit: 'contain' }}
-        />
-
-        <img
-          src={`/altar/${slug}.jpg`}
-          alt="Altar"
-          width="260"
-          style={{ objectFit: 'cover', borderRadius: '12px' }}
-        />
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
-          <img
-            src="/images/candle.jpg"
-            alt="Candle"
-            width="120"
-            style={{
-              opacity: candleLit ? 1 : 0.7,
-              transition: '0.3s ease',
-              objectFit: 'contain',
-            }}
-          />
-
-          <div
-            style={{
-              fontSize: '14px',
-              background: 'rgba(255,255,255,0.12)',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              minWidth: '140px',
-            }}
-          >
-            Lit {candleCount} time{candleCount === 1 ? '' : 's'}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ marginTop: '42px', display: 'flex', justifyContent: 'center' }}>
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '520px',
-            border: '2px solid rgba(255,255,255,0.45)',
-            borderRadius: '12px',
-            padding: '14px',
-            background: 'rgba(255,255,255,0.06)',
-            boxSizing: 'border-box',
-          }}
-        >
-          <label
-            htmlFor="prayer-box"
-            style={{
-              display: 'block',
-              textAlign: 'left',
-              marginBottom: '10px',
-              fontSize: '16px',
-              fontWeight: 600,
-            }}
-          >
-            Enter your prayer
-          </label>
-
-          <textarea
-            id="prayer-box"
-            value={prayer}
-            onChange={(e) => setPrayer(e.target.value)}
-            placeholder="Write your prayer here..."
-            style={{
-              width: '100%',
-              minHeight: '140px',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255,255,255,0.25)',
-              resize: 'vertical',
-              boxSizing: 'border-box',
-              fontSize: '15px',
-            }}
-          />
-
-          <div
-            style={{
-              marginTop: '16px',
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '12px',
-              flexWrap: 'wrap',
-            }}
-          >
-            <button
-              onClick={submitPrayer}
-              style={{
-                padding: '12px 22px',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '15px',
-              }}
-            >
-              Submit Prayer
-            </button>
-
-            <button
-              onClick={lightCandle}
-              style={{
-                padding: '12px 22px',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '15px',
-              }}
-            >
-              Light Candle
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: '42px',
-          maxWidth: '720px',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-        }}
-      >
-        <h2 style={{ marginBottom: '18px' }}>Former Prayers</h2>
-
-        {prayers.length === 0 ? (
-          <p style={{ opacity: 0.85 }}>No prayers yet.</p>
-        ) : (
-          prayers.map((entry, index) => (
-            <div
-              key={entry.id || `${entry.createdAt}-${index}`}
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                padding: '14px 18px',
-                marginTop: '12px',
-                borderRadius: '10px',
-                textAlign: 'left',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '13px',
-                  opacity: 0.8,
-                  marginBottom: '8px',
-                }}
+            return (
+              <button
+                key={item.altar_slug}
+                type="button"
+                onClick={() => handleOpenAltar(item.altar_slug)}
+                className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition ${
+                  isActive
+                    ? 'border-cyan-300 bg-cyan-400/20 text-cyan-100'
+                    : 'border-white/10 bg-black/20 text-slate-200 hover:border-cyan-300/60 hover:bg-cyan-400/10 hover:text-white'
+                }`}
               >
-                {formatDate(entry.createdAt)}
-              </div>
-
-              <div style={{ fontSize: '18px', lineHeight: 1.5 }}>
-                {entry.text}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+                <div className="font-medium">{item.altar_slug.toUpperCase()}</div>
+                <div className="text-xs text-slate-400">
+                  Click to enter this altar’s Holy Place
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
-  )
+  );
 }
