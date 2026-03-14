@@ -101,6 +101,20 @@ export default function AltarSelectionForm({
     );
   };
 
+  const handleReturnToMain = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cyber_altar_username', username);
+    }
+
+    router.push('/');
+  };
+
+  const handleExitToCrownMind = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = 'https://crownmind.netlify.app/';
+    }
+  };
+
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
       <div className="space-y-6">
@@ -203,13 +217,29 @@ export default function AltarSelectionForm({
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex flex-wrap items-center justify-end gap-4">
+              <button
+                type="button"
+                onClick={handleReturnToMain}
+                className="rounded-2xl border border-cyan-300/40 bg-cyan-400/10 px-6 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
+              >
+                Return To Main
+              </button>
+
               <button
                 type="button"
                 onClick={handleProceed}
                 className="rounded-2xl border border-amber-300/40 bg-amber-400/20 px-6 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30"
               >
                 Proceed to the Holy Place
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExitToCrownMind}
+                className="rounded-2xl border border-red-400/40 bg-red-500/10 px-6 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-500/20"
+              >
+                Exit To CrownMind
               </button>
             </div>
           </div>

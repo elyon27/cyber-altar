@@ -1,94 +1,81 @@
 The Netlify deploy errored, with the following guidance provided:
 
 **Diagnosis**  
-The build fails during Next.js’ type-checking stage because the JSX element `<CyberAltarPage slug={slug} />` in `src/app/altar/[slug]/page.tsx` assigns a `slug` prop to a component whose TypeScript definition doesn’t declare that prop. See the TypeScript error in the logs at [line 68](#L68)–[line 74](#L74). When a component is typed without props, the compiler assumes it only accepts `IntrinsicAttributes`, so any custom prop (like `slug`) is rejected.
+There’s a webpack module resolution error reported at [lines 71-74](#L71-L74): Next.js can’t resolve the import `@/components/cyber-altar/HolyPlace` referenced from `src/app/holy-place/page.tsx`. That means the file `components/cyber-altar/HolyPlace.(tsx|ts|js|jsx)` is either missing, has a different name or casing, or the alias isn’t configured correctly.
 
 **Solution**  
-Update the `CyberAltarPage` component so its props type (or function signature) explicitly declares `slug: string`. For example:
+1. Ensure the expected component file actually exists in the repo at `src/components/cyber-altar/HolyPlace.tsx` (or matching extension/case) and confirm it has been committed.  
+2. If the file is present under a different name or casing, either rename the file to `HolyPlace.tsx` (matching the import exactly, including casing) or adjust the import in `src/app/holy-place/page.tsx` to match the real path/filename.  
+3. If the file is intentionally located somewhere else, update the import path accordingly so it points to the correct location.  
 
-```tsx
-// src/components/CyberAltarPage.tsx (adjust the path if different)
-type CyberAltarPageProps = {
-  slug: string;
-  // …any other props
-};
-
-export default function CyberAltarPage({ slug }: CyberAltarPageProps) {
-  // component implementation
-}
-```
-
-If the component is exported from a different file, apply the same change there. Once the component accepts `slug` in its props, rerun `npm run build` to confirm the type error is resolved.
+Once the import path matches an existing committed file, the build should succeed.
 
 The relevant error logs are:
 
 Line 0: build-image version: 207bd4d38e2cd3af6515aa37c5942e41499b616a (noble-new-builds)
 Line 1: buildbot version: 420ff06ebdfb3fd8215b1a0a158ab916a07fe5a9
-Line 2: Building with cache
+Line 2: Building without cache
 Line 3: Starting to prepare the repo for build
-Line 4: Preparing Git Reference refs/heads/main
-Line 5: Installing dependencies
-Line 6: [33mmise[0m [33mWARN[0m  python is defined in /opt/build/repo/.mise.toml which overrides the global config (~/.config/mise/c
-Line 7: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
-Line 8: [31mmise[0m [31mERROR[0m python is a mise bin however it is not currently active. Use `mise use` to activate it in this dire
-Line 9: [31mmise[0m [31mERROR[0m [2mRun with --verbose or MISE_VERBOSE=1 for more information[0m
-Line 10: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
-Line 11: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
-Line 12: Attempting Node.js version '20.12.2' from .node-version
-Line 13: v20.12.2 is already installed.
-Line 14: Now using node v20.12.2 (npm v10.5.0)
-Line 15: Enabling Node.js Corepack
-Line 16: No npm workspaces detected
-Line 17: Installing npm packages using npm version 10.5.0
-Line 18: npm WARN EBADENGINE Unsupported engine {
-Line 19: npm WARN EBADENGINE   package: 'eslint-visitor-keys@5.0.1',
-Line 55: [96m[1mBuild command from Netlify app                                [22m[39m
-Line 56: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 57: ​
-Line 58: [36m$ npm run build[39m
-Line 59: > cyber-altar@1.0.0 build
-Line 60: > next build
-Line 61:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
-Line 62:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 63:  [32m[1m✓[22m[39m Compiled successfully in 7.5s
-Line 64:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 65: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 66: [31mFailed to compile.
-Line 67: [39m
-Line 68: [36m./src/app/altar/[slug]/page.tsx[39m:[33m14[39m:[33m26[39m
-Line 69: [31m[1mType error[22m[39m: Type '{ slug: string; }' is not assignable to type 'IntrinsicAttributes'.
-Line 70:   Property 'slug' does not exist on type 'IntrinsicAttributes'.
-Line 71: [0m [90m 12 |[39m   [36mconst[39m { slug } [33m=[39m [36mawait[39m params[33m;[39m
-Line 72:  [90m 13 |[39m
-Line 73: [31m[1m>[22m[39m[90m 14 |[39m   [36mreturn[39m [33m<[39m[33mCyberAltarPage[39m slug[33m=[39m{slug} [33m/[39m[33
-Line 74:  [90m    |[39m                          [31m[1m^[22m[39m
-Line 75:  [90m 15 |[39m }[0m
-Line 76: Next.js build worker exited with code: 1 and signal: null
-Line 77: [91m[1m​[22m[39m
-Line 78: [91m[1m"build.command" failed                                        [22m[39m
-Line 79: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 80: ​
-Line 81:   [31m[1mError message[22m[39m
-Line 82:   Command failed with exit code 1: npm run build
-Line 83: ​
-Line 84:   [31m[1mError location[22m[39m
-Line 85:   In Build command from Netlify app:
-Line 86:   npm run build
-Line 87: ​
-Line 88:   [31m[1mResolved config[22m[39m
-Line 89:   build:
-Line 90:     command: npm run build
-Line 91:     commandOrigin: ui
-Line 92:     environment:
-Line 93:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 94:       - NEXT_PUBLIC_SUPABASE_URL
-Line 95:       - SUPABASE_SERVICE_ROLE_KEY
-Line 96:     publish: /opt/build/repo/.next
-Line 97:     publishOrigin: ui
-Line 98:   plugins:
-Line 99:     - inputs: {}
-Line 100:       origin: ui
-Line 101:       package: "@netlify/plugin-nextjs"
-Line 102: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 103: Failing build: Failed to build site
-Line 104: Finished processing build request in 27.418s
+Line 4: No cached dependencies found. Cloning fresh repo
+Line 5: git clone --filter=blob:none https://github.com/elyon27/cyber-altar
+Line 6: Preparing Git Reference refs/heads/main
+Line 7: Installing dependencies
+Line 8: [33mmise[0m [33mWARN[0m  python is defined in /opt/build/repo/.mise.toml which overrides the global config (~/.config/mise/c
+Line 9: mise [36m~/.config/mise/config.toml[0m tools: [34mpython[0m@3.14.3
+Line 10: [31mmise[0m [31mERROR[0m python is a mise bin however it is not currently active. Use `mise use` to activate it in this dire
+Line 11: [31mmise[0m [31mERROR[0m [2mRun with --verbose or MISE_VERBOSE=1 for more information[0m
+Line 12: mise [36m~/.config/mise/config.toml[0m tools: [34mruby[0m@3.4.8
+Line 13: mise [36m~/.config/mise/config.toml[0m tools: [34mgo[0m@1.26.0
+Line 14: Attempting Node.js version '20.12.2' from .node-version
+Line 15: Downloading and installing node v20.12.2...
+Line 16: Downloading https://nodejs.org/dist/v20.12.2/node-v20.12.2-linux-x64.tar.xz...
+Line 17: Computing checksum with sha256sum
+Line 18: Checksums matched!
+Line 19: Now using node v20.12.2 (npm v10.5.0)
+Line 20: Enabling Node.js Corepack
+Line 21: No npm workspaces detected
+Line 59: [96m[1m​[22m[39m
+Line 60: [96m[1mBuild command from Netlify app                                [22m[39m
+Line 61: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 62: ​
+Line 63: [36m$ npm run build[39m
+Line 64: > cyber-altar@1.0.0 build
+Line 65: > next build
+Line 66: [33m[1m⚠[22m[39m No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/doc
+Line 67:    [1m[38;2;173;127;168m▲ Next.js 15.5.12[39m[22m
+Line 68:  [37m[1m [22m[39m Creating an optimized production build ...
+Line 69: [31mFailed to compile.
+Line 70: [39m
+Line 71: ./src/app/holy-place/page.tsx
+Line 72: [31m[1mModule not found[22m[39m: Can't resolve '[32m@/components/cyber-altar/HolyPlace[39m'
+Line 73: https://nextjs.org/docs/messages/module-not-found
+Line 74: > Build failed because of webpack errors
+Line 75: [91m[1m​[22m[39m
+Line 76: [91m[1m"build.command" failed                                        [22m[39m
+Line 77: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 78: ​
+Line 79:   [31m[1mError message[22m[39m
+Line 80:   Command failed with exit code 1: npm run build
+Line 81: ​
+Line 82:   [31m[1mError location[22m[39m
+Line 83:   In Build command from Netlify app:
+Line 84:   npm run build
+Line 85: ​
+Line 86:   [31m[1mResolved config[22m[39m
+Line 87:   build:
+Line 88:     command: npm run build
+Line 89:     commandOrigin: ui
+Line 90:     environment:
+Line 91:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 92:       - NEXT_PUBLIC_SUPABASE_URL
+Line 93:       - SUPABASE_SERVICE_ROLE_KEY
+Line 94:     publish: /opt/build/repo/.next
+Line 95:     publishOrigin: ui
+Line 96:   plugins:
+Line 97:     - inputs: {}
+Line 98:       origin: ui
+Line 99:       package: "@netlify/plugin-nextjs"
+Line 100: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 101: Failing build: Failed to build site
+Line 102: Finished processing build request in 31.938s
+Line 103: Failed during stage 'building site': Build script returned non-zero exit code: 2
