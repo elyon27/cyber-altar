@@ -1,29 +1,20 @@
 The Netlify deploy errored, with the following guidance provided:
 
-Diagnosis  
-The build stops during type checking because `src/app/layout.tsx` references `Geist(...)` without defining or importing `Geist`. TypeScript therefore raises “Cannot find name 'Geist'”, causing `next build` to fail.
+**Diagnosis**
 
-Solution  
-Import the font helper before using it (and install the package if it is not already present). For example:
+- The build stops during type checking because [line 67](#L67)-[line 75](#L75) reports a TypeScript error in `src/app/layout.tsx`: `GeistSans` (and `GeistMono`) are imported from `geist/font/*` and treated as callable functions. These exports are already configured `NextFontWithVariable` objects, so invoking them causes “Type 'NextFontWithVariable' has no call signatures.”
 
-```tsx
-import { Geist, Geist_Mono } from "geist/font";
-```
+**Solution**
 
-Then you can safely call:
+- Update `src/app/layout.tsx` so that the imported fonts are used directly, without calling them. For example:
+  ```tsx
+  import { GeistSans, GeistMono } from "geist/font";
 
-```tsx
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-```
-
-Adjust the import paths to match the `geist` package API you are using (e.g., `geist/font/sans` and `geist/font/mono` if your version exports those). Rebuild after adding the import.
+  const geistSans = GeistSans;
+  const geistMono = GeistMono;
+  ```
+  (You can also reference `GeistSans.variable` and `GeistMono.variable` directly in your markup without reassigning, if you prefer.)
+- Run `npm run build` locally to confirm the fix before redeploying to Netlify.
 
 The relevant error logs are:
 
@@ -40,39 +31,41 @@ Line 64:  [37m[1m [22m[39m Linting and checking validity of types ...
 Line 65: [31mFailed to compile.
 Line 66: [39m
 Line 67: [36m./src/app/layout.tsx[39m:[33m5[39m:[33m19[39m
-Line 68: [31m[1mType error[22m[39m: Cannot find name 'Geist'.
-Line 69: [0m [90m 3 |[39m [36mimport[39m [32m"./globals.css"[39m[33m;[39m[0m
-Line 70: [0m [90m 4 |[39m[0m
-Line 71: [0m[31m[1m>[22m[39m[90m 5 |[39m [36mconst[39m geistSans [33m=[39m [33mGeist[39m({[0m
-Line 72: [0m [90m   |[39m                   [31m[1m^[22m[39m[0m
-Line 73: [0m [90m 6 |[39m   variable[33m:[39m [32m"--font-geist-sans"[39m[33m,[39m[0m
-Line 74: [0m [90m 7 |[39m   subsets[33m:[39m [[32m"latin"[39m][33m,[39m[0m
-Line 75: [0m [90m 8 |[39m })[33m;[39m[0m
-Line 76: [91m[1m​[22m[39m
-Line 77: [91m[1m"build.command" failed                                        [22m[39m
-Line 78: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 79: ​
-Line 80:   [31m[1mError message[22m[39m
-Line 81:   Command failed with exit code 1: npm run build
-Line 82: ​
-Line 83:   [31m[1mError location[22m[39m
-Line 84:   In Build command from Netlify app:
-Line 85:   npm run build
-Line 86: ​
-Line 87:   [31m[1mResolved config[22m[39m
-Line 88:   build:
-Line 89:     command: npm run build
-Line 90:     commandOrigin: ui
-Line 91:     environment:
-Line 92:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 93:       - NEXT_PUBLIC_SUPABASE_URL
-Line 94:       - SUPABASE_SERVICE_ROLE_KEY
-Line 95:     publish: /opt/build/repo/.next
-Line 96:     publishOrigin: ui
-Line 97:   plugins:
-Line 98:     - inputs: {}
-Line 99:       origin: ui
-Line 100:       package: "@netlify/plugin-nextjs"
-Line 101: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 102: Failing build: Failed to build site
-Line 103: Finished processing build request in 33.348s
+Line 68: [31m[1mType error[22m[39m: This expression is not callable.
+Line 69:   Type 'NextFontWithVariable' has no call signatures.
+Line 70: [0m [90m 3 |[39m [36mimport[39m { [33mGeistMono[39m } [36mfrom[39m [32m"geist/font/mono"[39m[0m
+Line 71: [0m [90m 4 |[39m[0m
+Line 72: [0m[31m[1m>[22m[39m[90m 5 |[39m [36mconst[39m geistSans [33m=[39m [33mGeistSans[39m({[0m
+Line 73: [0m [90m   |[39m                   [31m[1m^[22m[39m[0m
+Line 74: [0m [90m 6 |[39m   variable[33m:[39m [32m"--font-geist-sans"[39m[33m,[39m[0m
+Line 75: [0m [90m 7 |[39m   subsets[33m:[39m [[32m"latin"[39m][33m,[39m[0m
+Line 76: [0m [90m 8 |[39m })[0m
+Line 77: [91m[1m​[22m[39m
+Line 78: [91m[1m"build.command" failed                                        [22m[39m
+Line 79: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 80: ​
+Line 81:   [31m[1mError message[22m[39m
+Line 82:   Command failed with exit code 1: npm run build
+Line 83: ​
+Line 84:   [31m[1mError location[22m[39m
+Line 85:   In Build command from Netlify app:
+Line 86:   npm run build
+Line 87: ​
+Line 88:   [31m[1mResolved config[22m[39m
+Line 89:   build:
+Line 90:     command: npm run build
+Line 91:     commandOrigin: ui
+Line 92:     environment:
+Line 93:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 94:       - NEXT_PUBLIC_SUPABASE_URL
+Line 95:       - SUPABASE_SERVICE_ROLE_KEY
+Line 96:     publish: /opt/build/repo/.next
+Line 97:     publishOrigin: ui
+Line 98:   plugins:
+Line 99:     - inputs: {}
+Line 100:       origin: ui
+Line 101:       package: "@netlify/plugin-nextjs"
+Line 102: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 103: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 104: Failing build: Failed to build site
+Line 105: Finished processing build request in 33.619s
