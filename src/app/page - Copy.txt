@@ -1,0 +1,8 @@
+// ==============================
+// File: app/page.tsx
+// ==============================
+import CyberAltarPage from '@/components/cyber-altar/CyberAltarPage';
+
+export default function Page() {
+  return <CyberAltarPage />;
+}
