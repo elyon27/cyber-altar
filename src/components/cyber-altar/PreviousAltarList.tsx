@@ -1,12 +1,9 @@
 'use client';
 
-<<<<<<< HEAD
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-=======
->>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
 type PreviousAltarItem = {
   altar_slug: string;
   created_at?: string;
@@ -14,7 +11,6 @@ type PreviousAltarItem = {
 
 type Props = {
   username: string;
-<<<<<<< HEAD
   previousAltars?: PreviousAltarItem[];
   selectedAltarSlug?: string;
   onSelectAltar?: (altarSlug: string) => void;
@@ -57,8 +53,6 @@ export default function PreviousAltarList({
     let active = true;
 
     const loadCounts = async () => {
-      if (typeof window === 'undefined') return;
-
       if (!uniqueAltars.length) {
         if (active) {
           setCountsByAltar({});
@@ -84,146 +78,62 @@ export default function PreviousAltarList({
           nextCounts[slug] = { prayers: 0, candles: 0 };
         }
 
-        if (email) {
-          const { data: profilesByEmail, error: profileEmailError } = await supabase
-            .from('altar_profiles')
-            .select('id, altar_slug')
-            .eq('email', email)
-            .in('altar_slug', altarSlugs);
+        // PRAYERS
+        const { data: prayers, error: prayerError } = await supabase
+          .from('altar_prayers')
+          .select('altar_slug, username')
+          .in('altar_slug', altarSlugs)
+          .eq('username', username);
 
-          if (profileEmailError) {
-            console.error(
-              'Failed to load altar profiles by email:',
-              profileEmailError
-            );
-          } else {
-            const profileIds = (profilesByEmail || []).map((item: any) => item.id);
-
-            if (profileIds.length > 0) {
-              const { data: prayersByProfile, error: prayersProfileError } =
-                await supabase
-                  .from('altar_prayers')
-                  .select('altar_slug, profile_id')
-                  .in('profile_id', profileIds);
-
-              if (prayersProfileError) {
-                console.error(
-                  'Failed to load altar prayers by profile_id:',
-                  prayersProfileError
-                );
-              } else {
-                for (const row of prayersByProfile || []) {
-                  const slug = normalizeSlug((row as any).altar_slug);
-                  if (!slug) continue;
-                  if (!nextCounts[slug]) nextCounts[slug] = { prayers: 0, candles: 0 };
-                  nextCounts[slug].prayers += 1;
-                }
-              }
-            }
-          }
-        } else {
-          const { data: prayersByUsername, error: prayersError } = await supabase
-            .from('altar_prayers')
-            .select('altar_slug, username')
-            .in('altar_slug', altarSlugs)
-            .eq('username', username);
-
-          if (prayersError) {
-            console.error('Failed to load altar prayers by username:', prayersError);
-          } else {
-            for (const row of prayersByUsername || []) {
-              const slug = normalizeSlug((row as any).altar_slug);
-              if (!slug) continue;
-              if (!nextCounts[slug]) nextCounts[slug] = { prayers: 0, candles: 0 };
-              nextCounts[slug].prayers += 1;
-            }
+        if (!prayerError) {
+          for (const row of prayers || []) {
+            const slug = normalizeSlug((row as any).altar_slug);
+            if (!slug) continue;
+            nextCounts[slug].prayers += 1;
           }
         }
 
-        const profilesQuery = supabase
+        // CANDLES
+        const { data: profiles, error: profileError } = await supabase
           .from('altar_profiles')
-          .select('altar_slug, candle_count, username, email')
-          .in('altar_slug', altarSlugs);
+          .select('altar_slug, candle_count')
+          .in('altar_slug', altarSlugs)
+          .eq('username', username);
 
-        const { data: profileRows, error: profileError } = email
-          ? await profilesQuery.eq('email', email)
-          : await profilesQuery.eq('username', username);
-
-        if (profileError) {
-          console.error('Failed to load altar candle counts:', profileError);
-        } else {
-          for (const row of profileRows || []) {
+        if (!profileError) {
+          for (const row of profiles || []) {
             const slug = normalizeSlug((row as any).altar_slug);
             if (!slug) continue;
-            if (!nextCounts[slug]) nextCounts[slug] = { prayers: 0, candles: 0 };
             nextCounts[slug].candles += Number((row as any).candle_count || 0);
           }
         }
 
-        if (active) {
-          setCountsByAltar(nextCounts);
-        }
+        if (active) setCountsByAltar(nextCounts);
       } catch (error) {
-        console.error('Failed to load altar history counts:', error);
+        console.error('Failed to load altar counts:', error);
       } finally {
-        if (active) {
-          setLoadingCounts(false);
-        }
+        if (active) setLoadingCounts(false);
       }
     };
 
     loadCounts();
-
-    const handleFocus = () => loadCounts();
-    const handleVisibility = () => {
-      if (!document.hidden) loadCounts();
-    };
-    const handleStorage = () => loadCounts();
-    const handlePageShow = () => loadCounts();
-    const handlePopState = () => loadCounts();
-    const handleCustomHistoryUpdate = () => loadCounts();
-
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('pageshow', handlePageShow);
-    window.addEventListener('popstate', handlePopState);
-    window.addEventListener('cyber-altar-history-updated', handleCustomHistoryUpdate as EventListener);
-    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', loadCounts);
 
     return () => {
       active = false;
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('cyber-altar-history-updated', handleCustomHistoryUpdate as EventListener);
-      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', loadCounts);
     };
   }, [username, uniqueAltars]);
-=======
-  previousAltars: PreviousAltarItem[];
-  selectedAltarSlug: string;
-  onSelectAltar: (altarSlug: string) => void;
-};
-
-export default function PreviousAltarList({
-  previousAltars,
-  selectedAltarSlug,
-  onSelectAltar,
-}: Props) {
-  const uniqueAltars = Array.from(
-    new Map(previousAltars.map((item) => [item.altar_slug, item])).values()
-  );
->>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
 
   return (
     <div>
       <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">
         Formerly Chosen Altars
       </p>
-<<<<<<< HEAD
 
-      <h3 className="mt-2 text-lg font-semibold text-white">Your Altar History</h3>
+      <h3 className="mt-2 text-lg font-semibold text-white">
+        Your Altar History
+      </h3>
 
       <div className="mt-4 space-y-3">
         {uniqueAltars.length === 0 ? (
@@ -264,14 +174,10 @@ export default function PreviousAltarList({
                       {slug.toUpperCase()}
                     </div>
 
-                    <div
-                      className={`mt-1 text-sm ${
-                        isSelected ? 'text-amber-100/90' : 'text-slate-300'
-                      }`}
-                    >
+                    <div className="mt-1 text-sm text-slate-300">
                       {loadingCounts
-                        ? 'Loading altar count...'
-                        : `Prayers-${counts.prayers} Candles-${counts.candles}`}
+                        ? 'Loading...'
+                        : `Prayer ${counts.prayers} | Candles ${counts.candles}`}
                     </div>
                   </div>
                 </div>
@@ -283,43 +189,3 @@ export default function PreviousAltarList({
     </div>
   );
 }
-=======
-      <h3 className="mt-2 text-lg font-semibold text-white">
-        Your Altar History
-      </h3>
-
-      {uniqueAltars.length === 0 ? (
-        <p className="mt-4 text-sm leading-6 text-slate-300">
-          No previously chosen altar pictures yet.
-        </p>
-      ) : (
-        <div className="mt-4 space-y-2">
-          {uniqueAltars.map((item) => {
-            const isActive = item.altar_slug === selectedAltarSlug;
-
-            return (
-              <button
-                key={item.altar_slug}
-                type="button"
-                onClick={() => onSelectAltar(item.altar_slug)}
-                className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                  isActive
-                    ? 'border-amber-300 bg-amber-300/10 text-amber-100'
-                    : 'border-white/10 bg-slate-900/60 text-slate-200 hover:border-cyan-300/60 hover:bg-cyan-400/10 hover:text-white'
-                }`}
-              >
-                <div className="text-sm font-semibold">
-                  {item.altar_slug.toUpperCase()}
-                </div>
-                <div className="mt-1 text-xs text-slate-400">
-                  Click to reselect this altar picture
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
->>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4

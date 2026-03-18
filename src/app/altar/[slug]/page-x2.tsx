@@ -25,6 +25,7 @@ type AltarPrayer = {
   created_at: string;
 };
 
+<<<<<<< HEAD
 type PreviousAltarItem = {
   altar_slug: string;
   created_at?: string;
@@ -112,23 +113,16 @@ const ALTAR_SCRIPTURES: ScriptureEntry[] = [
   { key: 'scrpt072', altar_slug: 'al072', reference: 'Jude 1:24', text: 'Now unto him that is able to keep you from falling, and to present you faultless before the presence of his glory with exceeding joy.' },
 ];
 
-function normalizeSlug(value?: string) {
-  return (value || '').trim().toLowerCase();
+function getScriptureEntry(altarSlug: string) {
+  return ALTAR_SCRIPTURES.find((item) => item.altar_slug === altarSlug) ?? ALTAR_SCRIPTURES[0];
 }
 
 function formatDate(dateString: string) {
-  try {
-    return new Date(dateString).toLocaleString();
-  } catch {
-    return dateString;
-  }
+  return new Date(dateString).toLocaleString();
 }
 
-function getScriptureEntry(altarSlug: string) {
-  return (
-    ALTAR_SCRIPTURES.find((item) => item.altar_slug === altarSlug) ??
-    ALTAR_SCRIPTURES[0]
-  );
+function normalizeSlug(value?: string) {
+  return (value || '').trim().toLowerCase();
 }
 
 function getCandleStorageKey(username: string, altarSlug: string) {
@@ -137,26 +131,7 @@ function getCandleStorageKey(username: string, altarSlug: string) {
 
 function getOwnerKey(username: string) {
   if (typeof window === 'undefined') return username;
-  return (
-    (localStorage.getItem('cyber_altar_email') || '').trim().toLowerCase() || username
-  );
-}
-
-function setStoredCandleCount(ownerKey: string, altarSlug: string, value: number) {
-  if (typeof window === 'undefined' || !ownerKey || !altarSlug) return;
-
-  const storageKey = `cyber_altar_candle_counts_${ownerKey}`;
-  const raw = localStorage.getItem(storageKey);
-  let counts: Record<string, number> = {};
-
-  try {
-    counts = raw ? JSON.parse(raw) : {};
-  } catch {
-    counts = {};
-  }
-
-  counts[altarSlug] = Number(value || 0);
-  localStorage.setItem(storageKey, JSON.stringify(counts));
+  return (localStorage.getItem('cyber_altar_email') || '').trim().toLowerCase() || username;
 }
 
 function updateStoredPrayerCount(ownerKey: string, altarSlug: string, increment = 1) {
@@ -164,6 +139,7 @@ function updateStoredPrayerCount(ownerKey: string, altarSlug: string, increment 
 
   const storageKey = `cyber_altar_prayer_counts_${ownerKey}`;
   const raw = localStorage.getItem(storageKey);
+
   let counts: Record<string, number> = {};
 
   try {
@@ -176,18 +152,34 @@ function updateStoredPrayerCount(ownerKey: string, altarSlug: string, increment 
   localStorage.setItem(storageKey, JSON.stringify(counts));
 }
 
+function setStoredCandleCount(ownerKey: string, altarSlug: string, value: number) {
+  if (typeof window === 'undefined' || !ownerKey || !altarSlug) return;
+
+  const storageKey = `cyber_altar_candle_counts_${ownerKey}`;
+  const raw = localStorage.getItem(storageKey);
+
+  let counts: Record<string, number> = {};
+
+  try {
+    counts = raw ? JSON.parse(raw) : {};
+  } catch {
+    counts = {};
+  }
+
+  counts[altarSlug] = Number(value || 0);
+  localStorage.setItem(storageKey, JSON.stringify(counts));
+}
+
 function writeAltarHistory(currentUsername: string, altarSlug: string) {
   if (typeof window === 'undefined' || !currentUsername || !altarSlug) return [];
 
   const normalizedSlug = normalizeSlug(altarSlug);
   const savedEmail = (localStorage.getItem('cyber_altar_email') || '').trim().toLowerCase();
-  const ownerKey =
-    savedEmail && currentUsername
-      ? `${savedEmail}__${currentUsername.trim().toLowerCase()}`
-      : savedEmail || currentUsername;
-
+  const ownerKey = savedEmail && currentUsername ? `${savedEmail}__${currentUsername.trim().toLowerCase()}` : savedEmail || currentUsername;
   const historyKey = `cyber_altar_history_${ownerKey}`;
+
   const existingRaw = localStorage.getItem(historyKey);
+
   let history: PreviousAltarItem[] = [];
 
   try {
@@ -214,7 +206,6 @@ function writeAltarHistory(currentUsername: string, altarSlug: string) {
   localStorage.setItem('cyber_altar_username', currentUsername);
   localStorage.setItem(historyKey, JSON.stringify(history));
   window.dispatchEvent(new CustomEvent('cyber-altar-history-updated'));
-
   return history;
 }
 
@@ -223,6 +214,7 @@ export default function HolyPlacePage() {
   const router = useRouter();
 
   const altarSlug = typeof params?.slug === 'string' ? normalizeSlug(params.slug) : '';
+  const altarSlug = typeof params?.slug === 'string' ? params.slug : '';
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [profile, setProfile] = useState<AltarProfile | null>(null);
@@ -233,8 +225,8 @@ export default function HolyPlacePage() {
   const [lightingCandle, setLightingCandle] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [globalCandleCount, setGlobalCandleCount] = useState(0);
-  const [globalPrayerCount, setGlobalPrayerCount] = useState(0);
 
+  const [globalPrayerCount, setGlobalPrayerCount] = useState(0);
   const altarImageSrc = useMemo(() => {
     return altarSlug ? `/altar/${altarSlug}.jpg` : '';
   }, [altarSlug]);
@@ -248,7 +240,11 @@ export default function HolyPlacePage() {
       .eq('altar_slug', currentAltarSlug);
 
     if (error) {
-      throw new Error(error.message);
+      throw new Error(
+        `altar_profiles candle total load failed: ${error.message}${
+          error.details ? ` | details: ${error.details}` : ''
+        }${error.hint ? ` | hint: ${error.hint}` : ''}`
+      );
     }
 
     const total = (data ?? []).reduce(
@@ -266,7 +262,11 @@ export default function HolyPlacePage() {
       .eq('altar_slug', currentAltarSlug);
 
     if (error) {
-      throw new Error(error.message);
+      throw new Error(
+        `altar_prayers global count load failed: ${error.message}${
+          error.details ? ` | details: ${error.details}` : ''
+        }${error.hint ? ` | hint: ${error.hint}` : ''}`
+      );
     }
 
     setGlobalPrayerCount(count || 0);
@@ -280,7 +280,11 @@ export default function HolyPlacePage() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new Error(error.message);
+      throw new Error(
+        `altar_prayers load failed: ${error.message}${
+          error.details ? ` | details: ${error.details}` : ''
+        }${error.hint ? ` | hint: ${error.hint}` : ''}`
+      );
     }
 
     setPrayers((data ?? []) as AltarPrayer[]);
@@ -289,18 +293,19 @@ export default function HolyPlacePage() {
   const ensureProfile = useCallback(
     async (currentUsername: string, currentEmail: string, currentAltarSlug: string) => {
       const loadExistingProfile = async () => {
-        let query = supabase.from('altar_profiles').select('*').eq('altar_slug', currentAltarSlug);
-
-        if (currentEmail) {
-          query = query.eq('email', currentEmail);
-        } else {
-          query = query.eq('username', currentUsername);
-        }
-
-        const { data, error } = await query.maybeSingle();
+        const { data, error } = await supabase
+          .from('altar_profiles')
+          .select('*')
+          .eq('username', currentUsername)
+          .eq('altar_slug', currentAltarSlug)
+          .maybeSingle();
 
         if (error) {
-          throw new Error(error.message);
+          throw new Error(
+            `altar_profiles select failed: ${error.message}${
+              error.details ? ` | details: ${error.details}` : ''
+            }${error.hint ? ` | hint: ${error.hint}` : ''}`
+          );
         }
 
         return (data as AltarProfile | null) ?? null;
@@ -326,13 +331,19 @@ export default function HolyPlacePage() {
             /duplicate key value violates unique constraint/i.test(insertError.message || '');
 
           if (!isDuplicateProfile) {
-            throw new Error(insertError.message);
+            throw new Error(
+              `altar_profiles insert failed: ${insertError.message}${
+                insertError.details ? ` | details: ${insertError.details}` : ''
+              }${insertError.hint ? ` | hint: ${insertError.hint}` : ''}`
+            );
           }
 
           nextProfile = await loadExistingProfile();
 
           if (!nextProfile) {
-            throw new Error('Existing altar profile could not be loaded.');
+            throw new Error(
+              'altar_profiles insert encountered a duplicate record, but the existing profile could not be loaded.'
+            );
           }
         } else {
           nextProfile = insertedProfile as AltarProfile;
@@ -342,19 +353,69 @@ export default function HolyPlacePage() {
       if (typeof window !== 'undefined') {
         const candleStorageKey = getCandleStorageKey(currentUsername, currentAltarSlug);
         const storedCandleCount = localStorage.getItem(candleStorageKey);
+        const parsedStoredCount = storedCandleCount ? Number.parseInt(storedCandleCount, 10) : NaN;
+
+        if (Number.isFinite(parsedStoredCount) && parsedStoredCount > (nextProfile.candle_count ?? 0)) {
+    async (
+      currentUsername: string,
+      currentEmail: string,
+      currentAltarSlug: string
+    ) => {
+      const { error: upsertError } = await supabase.from('altar_profiles').upsert(
+        {
+          username: currentUsername,
+          email: currentEmail || null,
+          altar_slug: currentAltarSlug,
+        },
+        {
+          onConflict: 'username,altar_slug',
+        }
+      );
+
+      if (upsertError) {
+        throw new Error(
+          `altar_profiles upsert failed: ${upsertError.message}${
+            upsertError.details ? ` | details: ${upsertError.details}` : ''
+          }${upsertError.hint ? ` | hint: ${upsertError.hint}` : ''}`
+        );
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('altar_profiles')
+        .select('*')
+        .eq('username', currentUsername)
+        .eq('altar_slug', currentAltarSlug)
+        .single();
+
+      if (profileError) {
+        throw new Error(
+          `altar_profiles select failed: ${profileError.message}${
+            profileError.details ? ` | details: ${profileError.details}` : ''
+          }${profileError.hint ? ` | hint: ${profileError.hint}` : ''}`
+        );
+      }
+
+      let nextProfile = profileData as AltarProfile;
+
+      if (typeof window !== 'undefined') {
+        const candleStorageKey = getCandleStorageKey(
+          currentUsername,
+          currentAltarSlug
+        );
+        const storedCandleCount = localStorage.getItem(candleStorageKey);
         const parsedStoredCount = storedCandleCount
           ? Number.parseInt(storedCandleCount, 10)
           : NaN;
 
         if (
           Number.isFinite(parsedStoredCount) &&
-          parsedStoredCount > Number(nextProfile.candle_count ?? 0)
+          parsedStoredCount > (nextProfile.candle_count ?? 0)
         ) {
           const { data: updatedProfile, error: updateError } = await supabase
             .from('altar_profiles')
             .update({ candle_count: parsedStoredCount })
             .eq('id', nextProfile.id)
-            .select('*')
+            .select()
             .single();
 
           if (!updateError && updatedProfile) {
@@ -363,9 +424,15 @@ export default function HolyPlacePage() {
         }
 
         localStorage.setItem(candleStorageKey, String(nextProfile.candle_count ?? 0));
+
         const ownerKey = getOwnerKey(currentUsername);
         setStoredCandleCount(ownerKey, currentAltarSlug, Number(nextProfile.candle_count ?? 0));
         writeAltarHistory(currentUsername, currentAltarSlug);
+      
+        localStorage.setItem(
+          candleStorageKey,
+          String(nextProfile.candle_count ?? 0)
+        );
       }
 
       setProfile(nextProfile);
@@ -376,6 +443,9 @@ export default function HolyPlacePage() {
       return nextProfile;
     },
     [loadGlobalCandleCount, loadGlobalPrayerCount, loadPrayers]
+      return nextProfile;
+    },
+    [loadGlobalCandleCount, loadPrayers]
   );
 
   useEffect(() => {
@@ -386,15 +456,34 @@ export default function HolyPlacePage() {
 
         const storedUsername =
           typeof window !== 'undefined' ? localStorage.getItem('cyber_altar_username') || '' : '';
+
         const storedEmail =
           typeof window !== 'undefined' ? localStorage.getItem('cyber_altar_email') || '' : '';
+
+        const storedSelectedSlug =
+          typeof window !== 'undefined' ? localStorage.getItem('cyber_altar_selected_slug') || '' : '';
+
+        if (!storedUsername) {
+          setErrorMessage('No pilgrim was found. Please return to the altar selection screen.');
+
+          typeof window !== 'undefined'
+            ? localStorage.getItem('cyber_altar_username') || ''
+            : '';
+
+        const storedEmail =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('cyber_altar_email') || ''
+            : '';
+
         const storedSelectedSlug =
           typeof window !== 'undefined'
             ? localStorage.getItem('cyber_altar_selected_slug') || ''
             : '';
 
         if (!storedUsername) {
-          setErrorMessage('No pilgrim was found. Please return to the altar selection screen.');
+          setErrorMessage(
+            'No pilgrim was found. Please return to the altar selection screen.'
+          );
           setLoading(false);
           return;
         }
@@ -410,6 +499,8 @@ export default function HolyPlacePage() {
             localStorage.setItem('cyber_altar_selected_slug', altarSlug);
           }
           writeAltarHistory(storedUsername, altarSlug);
+        if (typeof window !== 'undefined' && storedSelectedSlug !== altarSlug) {
+          localStorage.setItem('cyber_altar_selected_slug', altarSlug);
         }
 
         setUsername(storedUsername);
@@ -421,6 +512,10 @@ export default function HolyPlacePage() {
         setErrorMessage(
           `Failed to load the Holy Place: ${
             error?.message || error?.details || error?.hint || JSON.stringify(error)
+            error?.message ||
+            error?.details ||
+            error?.hint ||
+            JSON.stringify(error)
           }`
         );
       } finally {
@@ -464,18 +559,12 @@ export default function HolyPlacePage() {
         async () => {
           await loadGlobalCandleCount(altarSlug);
 
-          let profileQuery = supabase
+          const { data } = await supabase
             .from('altar_profiles')
             .select('*')
-            .eq('altar_slug', altarSlug);
-
-          if (email) {
-            profileQuery = profileQuery.eq('email', email);
-          } else {
-            profileQuery = profileQuery.eq('username', username);
-          }
-
-          const { data } = await profileQuery.maybeSingle();
+            .eq('username', username)
+            .eq('altar_slug', altarSlug)
+            .maybeSingle();
 
           if (data) {
             const nextProfile = data as AltarProfile;
@@ -491,6 +580,11 @@ export default function HolyPlacePage() {
               setStoredCandleCount(ownerKey, altarSlug, Number(nextProfile.candle_count ?? 0));
               writeAltarHistory(username, altarSlug);
             }
+
+            .single();
+
+          if (data) {
+            setProfile(data as AltarProfile);
           }
         }
       )
@@ -500,15 +594,10 @@ export default function HolyPlacePage() {
       supabase.removeChannel(prayerChannel);
       supabase.removeChannel(candleChannel);
     };
-  }, [
-    altarSlug,
-    email,
-    loadGlobalCandleCount,
-    loadGlobalPrayerCount,
-    loadPrayers,
-    profile?.id,
-    username,
-  ]);
+
+  }, [altarSlug, loadGlobalCandleCount, loadGlobalPrayerCount, loadPrayers, profile?.id, username]);
+
+  }, [altarSlug, loadGlobalCandleCount, loadPrayers, profile?.id, username]);
 
   const handleSubmitPrayer = async (event: FormEvent) => {
     event.preventDefault();
@@ -542,6 +631,13 @@ export default function HolyPlacePage() {
         updateStoredPrayerCount(ownerKey, profile.altar_slug, 1);
         writeAltarHistory(profile.username, profile.altar_slug);
       }
+
+      const { data } = await supabase.from('altar_profiles').select('*').eq('id', profile.id).single();
+
+      if (data) {
+        setProfile(data as AltarProfile);
+      }
+
     } catch (error) {
       console.error(error);
       setErrorMessage('Failed to submit prayer.');
@@ -557,7 +653,7 @@ export default function HolyPlacePage() {
       setLightingCandle(true);
       setErrorMessage('');
 
-      const nextCount = Number(profile.candle_count ?? 0) + 1;
+      const nextCount = (profile.candle_count ?? 0) + 1;
 
       if (typeof window !== 'undefined') {
         const candleStorageKey = getCandleStorageKey(username, altarSlug);
@@ -568,7 +664,7 @@ export default function HolyPlacePage() {
         .from('altar_profiles')
         .update({ candle_count: nextCount })
         .eq('id', profile.id)
-        .select('*')
+        .select()
         .single();
 
       if (error) {
@@ -585,6 +681,10 @@ export default function HolyPlacePage() {
         const ownerKey = getOwnerKey(username);
         setStoredCandleCount(ownerKey, altarSlug, Number(updatedProfile.candle_count ?? nextCount));
         writeAltarHistory(username, altarSlug);
+        localStorage.setItem(
+          candleStorageKey,
+          String(updatedProfile.candle_count ?? nextCount)
+        );
       }
 
       await loadGlobalCandleCount(altarSlug);
@@ -617,6 +717,10 @@ export default function HolyPlacePage() {
 
         const ownerKey = getOwnerKey(username);
         setStoredCandleCount(ownerKey, altarSlug, Number(profile.candle_count ?? 0));
+        localStorage.setItem(
+          candleStorageKey,
+          String(profile.candle_count ?? 0)
+        );
       }
     }
 
@@ -649,6 +753,11 @@ export default function HolyPlacePage() {
             </div>
             <p className="mt-3 text-white/75">Pilgrim: {username}</p>
             <p className="text-white/60">Selected Altar: {altarSlug.toUpperCase()}</p>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div>
+            <h1 className="text-3xl font-bold">Holy Place</h1>
+            <p className="mt-1 text-white/75">Pilgrim: {username}</p>
+            <p className="text-white/60">Selected Altar: {altarSlug}</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -660,13 +769,8 @@ export default function HolyPlacePage() {
               Return to Altar Selection
             </button>
 
-            <Link
-              href="/"
-              className="rounded-xl border border-white/20 px-4 py-3 font-medium hover:bg-white/10"
-            >
+            <Link href="/" className="rounded-xl border border-white/20 px-4 py-3 font-medium hover:bg-white/10">
               Main Introduction
-            </Link>
-
             <Link
               href="https://crownmind.netlify.app"
               className="rounded-xl bg-amber-500 px-4 py-3 font-semibold text-slate-950"
@@ -678,6 +782,7 @@ export default function HolyPlacePage() {
 
         {errorMessage ? (
           <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-red-100">
+          <div className="mb-6 rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm">
             {errorMessage}
           </div>
         ) : null}
@@ -740,14 +845,68 @@ export default function HolyPlacePage() {
               <h2 className="text-xl font-semibold">Offer a Prayer</h2>
 
               <form className="mt-4 space-y-4" onSubmit={handleSubmitPrayer}>
-                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-                  <textarea
-                    value={prayerText}
-                    onChange={(event) => setPrayerText(event.target.value)}
-                    placeholder="Write your prayer here..."
-                    className="min-h-[180px] w-full resize-none rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-white/40 focus:border-cyan-400/50"
-                  />
-                </div>
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="relative mx-auto mb-5 h-[420px] w-full max-w-xl overflow-hidden rounded-2xl border border-white/10">
+              {altarImageSrc ? (
+                <Image
+                  src={altarImageSrc}
+                  alt={`Selected altar ${altarSlug}`}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              ) : null}
+            </div>
+
+            <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 p-5">
+              <p className="text-lg font-semibold">Your Candles Lighted</p>
+              <p className="mt-2 text-4xl font-bold">
+                {profile?.candle_count ?? 0}
+              </p>
+
+              <p className="mt-5 text-lg font-semibold text-amber-100">
+                Global Candles for this Altar
+              </p>
+              <p className="mt-2 text-4xl font-bold text-amber-300">
+                {globalCandleCount}
+              </p>
+
+              <div className="mt-4 flex items-center gap-4">
+                <Image
+                  src="/images/candle.jpg"
+                  alt="Candle"
+                  width={60}
+                  height={120}
+                  className="rounded-lg shadow-lg"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleLightCandle}
+                  disabled={lightingCandle}
+                  className="rounded-xl bg-amber-500 px-5 py-3 font-semibold text-slate-950 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {lightingCandle ? 'Lighting Candle...' : 'Light Candle'}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <form
+              onSubmit={handleSubmitPrayer}
+              className="rounded-2xl border border-white/10 bg-white/5 p-5"
+            >
+              <h2 className="text-xl font-semibold">Enter Your Prayer</h2>
+
+              <div className="mt-4 rounded-2xl border border-white/20 bg-slate-900/70 p-3">
+                <textarea
+                  value={prayerText}
+                  onChange={(event) => setPrayerText(event.target.value)}
+                  placeholder="Write your prayer here..."
+                  className="min-h-[150px] w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-white/40 focus:border-cyan-400/50"
+                />
 
                 <button
                   type="submit"
@@ -781,8 +940,46 @@ export default function HolyPlacePage() {
               </div>
             </section>
           </aside>
+                  className="min-h-[160px] w-full resize-none bg-transparent outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submittingPrayer || !prayerText.trim()}
+                className="mt-4 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submittingPrayer ? 'Submitting Prayer...' : 'Submit Prayer'}
+              </button>
+            </form>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <h2 className="text-xl font-semibold">Former Prayers</h2>
+
+              {prayers.length === 0 ? (
+                <p className="mt-4 text-white/70">No former prayers yet.</p>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {prayers.map((prayer) => (
+                    <div
+                      key={prayer.id}
+                      className="rounded-2xl border border-white/10 bg-slate-900/60 p-4"
+                    >
+                      <p className="text-xs uppercase tracking-wide text-white/50">
+                        {formatDate(prayer.created_at)}
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap text-white/90">
+                        {prayer.prayer_text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       </div>
     </main>
   );
+}
 }

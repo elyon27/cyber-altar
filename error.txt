@@ -1,78 +1,280 @@
 The Netlify deploy errored, with the following guidance provided:
 
-**Diagnosis**
+Diagnosis: The build fails because there are unresolved Git merge conflict markers in multiple source files, causing syntax errors when Next.js attempts to compile. For example, `<<<<<<<`, `=======`, and `>>>>>>>` markers are present in `src/lib/supabase.ts`, `src/app/altar/[slug]/page.tsx`, and `src/app/select-altar/page.tsx`, which prevents the TypeScript files from parsing.
 
-`next build` fails during type checking because `PrayerClient.tsx` renders `<HolyPlace nickname={...} prayer={...} altarImage={...} />`, but the `HolyPlace` component’s props are not typed to accept those attributes. TypeScript therefore treats `<HolyPlace />` as an intrinsic element with no `nickname`, `prayer`, or `altarImage` props, which triggers the error.
-
-**Solution**
-
-Update `src/components/cyber-altar/HolyPlace.tsx` so the component explicitly declares the props it expects. For example:
-
-```tsx
-// src/components/cyber-altar/HolyPlace.tsx
-type HolyPlaceProps = {
-  nickname: string;
-  prayer: string;
-  altarImage: string;
-};
-
-export default function HolyPlace({ nickname, prayer, altarImage }: HolyPlaceProps) {
-  // existing component code...
-}
-```
-
-or, if the component is already defined, add the prop interface and destructuring. Re-run the build afterwards; it should succeed once TypeScript recognises that `HolyPlace` accepts those props.
+Solution: Resolve the merge conflicts locally before pushing to Netlify. For each affected file, decide which code blocks to keep, remove all conflict markers, and ensure the resulting code is valid. After resolving, rebuild locally with `npm run build` to verify success, then commit and push the cleaned files so Netlify can build without syntax errors.
 
 The relevant error logs are:
 
-Line 55: [96m[1mBuild command from Netlify app                                [22m[39m
-Line 56: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 57: ​
-Line 58: [36m$ npm run build[39m
-Line 59: > cyber-altar@1.0.0 build
-Line 60: > next build
-Line 61:   [1m[38;2;173;127;168m▲ Next.js 14.2.5[39m[22m
-Line 62:  [37m[1m [22m[39m Creating an optimized production build ...
-Line 63:  [32m[1m✓[22m[39m Compiled successfully
-Line 64:  [37m[1m [22m[39m Linting and checking validity of types ...
-Line 65: [31mFailed to compile.
-Line 66: [39m
-Line 67: [36m./src/components/cyber-altar/PrayerClient.tsx[39m:[33m21[39m:[33m9[39m
-Line 68: [31m[1mType error[22m[39m: Type '{ nickname: string; prayer: string; altarImage: string; }' is not assignable to type 'Intri
-Line 69:   Property 'nickname' does not exist on type 'IntrinsicAttributes'.
-Line 70: [0m [90m 19 |[39m     [36mreturn[39m ([0m
-Line 71: [0m [90m 20 |[39m       [33m<[39m[33mHolyPlace[39m[0m
-Line 72: [0m[31m[1m>[22m[39m[90m 21 |[39m         nickname[33m=[39m{nickname}[0m
-Line 73: [0m [90m    |[39m         [31m[1m^[22m[39m[0m
-Line 74: [0m [90m 22 |[39m         prayer[33m=[39m{prayer}[0m
-Line 75: [0m [90m 23 |[39m         altarImage[33m=[39m{altarImage}[0m
-Line 76: [0m [90m 24 |[39m       [33m/[39m[33m>[39m[0m
-Line 77: Failed during stage 'building site': Build script returned non-zero exit code: 2
-Line 78: [91m[1m​[22m[39m
-Line 79: [91m[1m"build.command" failed                                        [22m[39m
-Line 80: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
-Line 81: ​
-Line 82:   [31m[1mError message[22m[39m
-Line 83:   Command failed with exit code 1: npm run build
-Line 84: ​
-Line 85:   [31m[1mError location[22m[39m
-Line 86:   In Build command from Netlify app:
-Line 87:   npm run build
-Line 88: ​
-Line 89:   [31m[1mResolved config[22m[39m
-Line 90:   build:
-Line 91:     command: npm run build
-Line 92:     commandOrigin: ui
-Line 93:     environment:
-Line 94:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
-Line 95:       - NEXT_PUBLIC_SUPABASE_URL
-Line 96:       - SUPABASE_SERVICE_ROLE_KEY
-Line 97:     publish: /opt/build/repo/.next
-Line 98:     publishOrigin: ui
-Line 99:   plugins:
-Line 100:     - inputs: {}
-Line 101:       origin: ui
-Line 102:       package: "@netlify/plugin-nextjs"
-Line 103: Build failed due to a user error: Build script returned non-zero exit code: 2
-Line 104: Failing build: Failed to build site
-Line 105: Finished processing build request in 34.7s
+Line 52: Next.js cache restored
+Line 53: [96m[1m​[22m[39m
+Line 54: [96m[1mBuild command from Netlify app                                [22m[39m
+Line 55: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 56: ​
+Line 57: [36m$ npm run build[39m
+Line 58: > cyber-altar@1.0.0 build
+Line 59: > next build
+Line 60:   [1m[38;2;173;127;168m▲ Next.js 14.2.5[39m[22m
+Line 61:  [37m[1m [22m[39m Creating an optimized production build ...
+Line 62: [31mFailed to compile.
+Line 63: [39m
+Line 64: ./src/lib/supabase.ts
+Line 65: Error:
+Line 66:   [31mx[0m Merge conflict marker encountered.
+Line 67:    ,-[[36;1;4m/opt/build/repo/src/lib/supabase.ts[0m:1:1]
+Line 68:  [2m1[0m | <<<<<<< HEAD
+Line 69:    : [31;1m^^^^^^^[0m
+Line 70:  [2m2[0m | import { createClient } from '@supabase/supabase-js'
+Line 71:  [2m3[0m |
+Line 72:  [2m4[0m | const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+Line 73:    `----
+
+  [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4m/opt/build/repo/src/lib/supabase.ts[0m:5:1]
+ [2m 5[
+Line 74:   [31mx[0m Merge conflict marker encountered.
+Line 75:     ,-[[36;1;4m/opt/build/repo/src/lib/supabase.ts[0m:12:1]
+Line 76:  [2m12[0m | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+Line 77:  [2m13[0m |
+Line 78:  [2m14[0m | export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+Line 79:  [2m15[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 80:     : [31;1m^^^^^^^[0m
+Line 81:     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/lib/supabase.ts
+./src/app/prayer-wall/page.tsx
+
+Line 82:   [31mx[0m Merge conflict marker encountered.
+Line 83:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:117:1]
+Line 84:  [2m117[0m |   return ALTAR_SCRIPTURES.find((item) => item.altar_slug === altarSlug) ?? ALTAR_SCRIPTURES[0];
+Line 85:  [2m118[0m | }
+Line 86:  [2m119[0m |
+Line 87:  [2m120[0m | =======
+Line 88:      : [31;1m^^^^^^^[0m
+Line 89: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 90:  [2m121[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 91:  [2m122[0m | function formatDate(dateString: string) {
+Line 92:  [2m123[0m |   return new Date(dateString).toLocaleString();
+Line 93:      `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:1
+Line 94:   [31mx[0m Merge conflict marker encountered.
+Line 95:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:123:1]
+Line 96:  [2m123[0m |   return new Date(dateString).toLocaleString();
+Line 97:  [2m124[0m | }
+Line 98:  [2m125[0m |
+Line 99:  [2m126[0m | <<<<<<< HEAD
+Line 138:   [31mx[0m Merge conflict marker encountered.
+Line 139:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:225:1]
+Line 140:  [2m225[0m |   const altarSlug = typeof params?.slug === 'string' ? normalizeSlug(params.slug) : '';
+Line 141:  [2m226[0m | =======
+Line 142:  [2m227[0m |   const altarSlug = typeof params?.slug === 'string' ? params.slug : '';
+Line 143:  [2m228[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 144:      : [31;1m^^^^^^^[0m
+Line 145:  [2m229[0m |
+Line 146:  [2m230[0m |   const [username, setUsername] = useState('');
+Line 147:  [2m231[0m |   const [email, setEmail] = useState('');
+Line 148:      `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:2
+Line 149:   [31mx[0m Merge conflict marker encountered.
+Line 150:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:239:1]
+Line 151:  [2m239[0m |   const [globalCandleCount, setGlobalCandleCount] = useState(0);
+Line 152:  [2m240[0m | <<<<<<< HEAD
+Line 153:  [2m241[0m |   const [globalPrayerCount, setGlobalPrayerCount] = useState(0);
+Line 154:  [2m242[0m | =======
+Line 155:      : [31;1m^^^^^^^[0m
+Line 156:  [2m243[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 157:  [2m244[0m |
+Line 158:  [2m245[0m |   const altarImageSrc = useMemo(() => {
+Line 160:   [31mx[0m Merge conflict marker encountered.
+Line 161:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:246:1]
+Line 162:  [2m246[0m |     return altarSlug ? `/altar/${altarSlug}.jpg` : '';
+Line 163:  [2m247[0m |   }, [altarSlug]);
+Line 164:  [2m248[0m |
+Line 165:  [2m249[0m | <<<<<<< HEAD
+Line 166:      : [31;1m^^^^^^^[0m
+Line 167:  [2m250[0m |   const scriptureEntry = useMemo(() => getScriptureEntry(altarSlug), [altarSlug]);
+Line 168:  [2m251[0m |
+Line 169:  [2m252[0m | =======
+Line 170:      `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:2
+Line 171:   [31mx[0m Merge conflict marker encountered.
+Line 172:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:250:1]
+Line 173:  [2m250[0m |   const scriptureEntry = useMemo(() => getScriptureEntry(altarSlug), [altarSlug]);
+Line 174:  [2m251[0m |
+Line 175:  [2m252[0m | =======
+Line 176:  [2m253[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 177:      : [31;1m^^^^^^^[0m
+Line 178:  [2m254[0m |   const loadGlobalCandleCount = useCallback(async (currentAltarSlug: string) => {
+Line 179:  [2m255[0m |     const { data, error } = await supabase
+Line 180:  [2m256[0m |       .from('altar_profiles')
+Line 181:      `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:2
+Line 182:   [31mx[0m Merge conflict marker encountered.
+Line 183:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:291:1]
+Line 184:  [2m291[0m |     setGlobalPrayerCount(count || 0);
+Line 185:  [2m292[0m |   }, []);
+Line 186:  [2m293[0m |
+Line 187:  [2m294[0m | =======
+Line 188:      : [31;1m^^^^^^^[0m
+Line 189:  [2m295[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 190:  [2m296[0m |   const loadPrayers = useCallback(async (profileId: string) => {
+Line 191:  [2m297[0m |     const { data, error } = await supabase
+Line 192:      `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:2
+Line 193:   [31mx[0m Merge conflict marker encountered.
+Line 194:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:312:1]
+Line 195:  [2m312[0m |   }, []);
+Line 196:  [2m313[0m |
+Line 197:  [2m314[0m |   const ensureProfile = useCallback(
+Line 198:  [2m315[0m | <<<<<<< HEAD
+Line 199:      : [31;1m^^^^^^^[0m
+Line 200:  [2m316[0m |     async (currentUsername: string, currentEmail: string, currentAltarSlug: string) => {
+Line 201:  [2m317[0m |       const loadExistingProfile = async () => {
+Line 202:  [2m318[0m |         const { data, error } = await supabase
+Line 203:      `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:3
+Line 204:   [31mx[0m Merge conflict marker encountered.
+Line 205:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:434:1]
+Line 206:  [2m434[0m |           Number.isFinite(parsedStoredCount) &&
+Line 207:  [2m435[0m |           parsedStoredCount > (nextProfile.candle_count ?? 0)
+Line 208:  [2m436[0m |         ) {
+Line 209:  [2m437[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 210:      : [31;1m^^^^^^^[0m
+Line 211:  [2m438[0m |           const { data: updatedProfile, error: updateError } = await supabase
+Line 212:  [2m439[0m |             .from('altar_profiles')
+Line 213:  [2m440[0m |             .update({ candle_count: parsedStoredCount })
+Line 214:      `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:4
+Line 215:   [31mx[0m Merge conflict marker encountered.
+Line 216:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:453:1]
+Line 217:  [2m453[0m |         const ownerKey = getOwnerKey(currentUsername);
+Line 218:  [2m454[0m |         setStoredCandleCount(ownerKey, currentAltarSlug, Number(nextProfile.candle_count ?? 0));
+Line 219:  [2m455[0m |         writeAltarHistory(currentUsername, currentAltarSlug);
+Line 220:  [2m456[0m | =======
+Line 221:      : [31;1m^^^^^^^[0m
+Line 237:   [31mx[0m Expression expected
+Line 238:      ,-[[36;1;4m/opt/build/repo/src/app/altar/[slug]/page.tsx[0m:473:1]
+Line 239:  [2m473[0m | =======
+Line 240:  [2m474[0m |
+Line 241:  [2m475[0m |       return nextProfile;
+Line 242:  [2m476[0m |     },
+Line 243:      : [31;1m     ^[0m
+Line 244:  [2m477[0m |     [loadGlobalCandleCount, loadPrayers]
+Line 245:  [2m478[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 246:  [2m479[0m |   );
+Line 247:      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/altar/[slug]/page.tsx
+
+./src/app/select-al
+Line 248:   [31mx[0m Merge conflict marker encountered.
+Line 249:     ,-[[36;1;4m/opt/build/repo/src/app/select-altar/page.tsx[0m:66:1]
+Line 250:  [2m66[0m |   });
+Line 251:  [2m67[0m | }
+Line 252:  [2m68[0m |
+Line 253:  [2m69[0m | =======
+Line 254:     : [31;1m^^^^^^^[0m
+Line 255:  [2m70[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 256:  [2m71[0m | export default function SelectAltarPage() {
+Line 257:  [2m72[0m |   const [username, setUsername] = useState('Pilgrim');
+Line 262:  [2m74[0m |
+Line 263:  [2m75[0m |   useEffect(() => {
+Line 264:  [2m76[0m | <<<<<<< HEAD
+Line 265:     : [31;1m^^^^^^^[0m
+Line 266:  [2m77[0m |     if (typeof window === 'undefined') return;
+Line 267:  [2m78[0m |
+Line 268:  [2m79[0m |     const savedUsername = localStorage.getItem('cyber_altar_username') || 'Pilgrim';
+Line 269:     `----
+
+  [31mx[0m Merge conflict marker encountered.
+     ,-[[36;1;4m/opt/build/repo/src/app/select-altar/page.tsx[0m:10
+Line 270:   [31mx[0m Merge conflict marker encountered.
+Line 271:      ,-[[36;1;4m/opt/build/repo/src/app/select-altar/page.tsx[0m:118:1]
+Line 272:  [2m118[0m |         console.error('Failed to parse altar history from localStorage:', error);
+Line 273:  [2m119[0m |       }
+Line 274:  [2m120[0m |     }
+Line 275:  [2m121[0m | >>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
+Line 276:      : [31;1m^^^^^^^[0m
+Line 277:  [2m122[0m |   }, []);
+Line 278:  [2m123[0m |
+Line 279:  [2m124[0m |   return (
+Line 280:      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/select-altar/page.tsx
+
+./src/lib/supabase.
+Line 281:   [31mx[0m Merge conflict marker encountered.
+Line 282:     ,-[[36;1;4m/opt/build/repo/src/lib/supabase.ts[0m:5:1]
+Line 283:  [2m 5[0m | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+Line 284:  [2m 6[0m |
+Line 285:  [2m 7[0m | export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+Line 286:  [2m 8[0m | =======
+Line 287:     : [31;1m^^^^^^^[0m
+Line 288:  [2m 9[0m | import { createClient } from '@supabase/supabase-js';
+Line 289:  [2m10[0m |
+Line 290:  [2m11[0m | const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+Line 291:     `----
+
+  [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4m/opt/build/repo/src/lib/supabase.ts[0m:12:1]
+ [2m12
+Line 292: Caused by:
+Line 293:     Syntax Error
+Line 294: Import trace for requested module:
+Line 295: ./src/lib/supabase.ts
+Line 296: ./src/app/api/delete-altar/route.ts
+Line 297: > Build failed because of webpack errors
+Line 298: [91m[1m​[22m[39m
+Line 299: [91m[1m"build.command" failed                                        [22m[39m
+Line 300: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 301: ​
+Line 302:   [31m[1mError message[22m[39m
+Line 303:   Command failed with exit code 1: npm run build
+Line 304: ​
+Line 305:   [31m[1mError location[22m[39m
+Line 306:   In Build command from Netlify app:
+Line 307:   npm run build
+Line 308: ​
+Line 309:   [31m[1mResolved config[22m[39m
+Line 310:   build:
+Line 311:     command: npm run build
+Line 312:     commandOrigin: ui
+Line 313:     environment:
+Line 314:       - NEXT_PUBLIC_SUPABASE_ANON_KEY
+Line 315:       - NEXT_PUBLIC_SUPABASE_URL
+Line 316:       - SUPABASE_SERVICE_ROLE_KEY
+Line 317:     publish: /opt/build/repo/.next
+Line 318:     publishOrigin: ui
+Line 319:   plugins:
+Line 320:     - inputs: {}
+Line 321:       origin: ui
+Line 322:       package: "@netlify/plugin-nextjs"
+Line 323: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 324: Failing build: Failed to build site
+Line 325: Finished processing build request in 17.335s
