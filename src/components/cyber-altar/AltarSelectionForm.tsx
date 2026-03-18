@@ -1,7 +1,11 @@
 'use client';
 
+<<<<<<< HEAD
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+=======
+import { useEffect, useMemo, useState } from 'react';
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
 import { useRouter } from 'next/navigation';
 import PreviousAltarList from './PreviousAltarList';
 
@@ -27,6 +31,7 @@ function buildAltarList() {
   });
 }
 
+<<<<<<< HEAD
 function normalizeSlug(value?: string) {
   return (value || '').trim().toLowerCase();
 }
@@ -193,12 +198,15 @@ function purgeLocalAltarData(username: string, altarSlug: string) {
   removeSlugFromStoredCounts(`cyber_altar_candle_counts_${ownerKey}`, normalizedSlug);
 }
 
+=======
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
 export default function AltarSelectionForm({
   username,
   previousAltars = [],
 }: Props) {
   const router = useRouter();
   const altarOptions = useMemo(() => buildAltarList(), []);
+<<<<<<< HEAD
   const [selectedAltarSlug, setSelectedAltarSlug] = useState<string>('al001');
   const [displayPreviousAltars, setDisplayPreviousAltars] = useState<PreviousAltarItem[]>(
     Array.isArray(previousAltars) ? previousAltars : []
@@ -282,10 +290,23 @@ export default function AltarSelectionForm({
     const deletedAltars = getDeletedAltars(username);
 
     if (savedSelected && !deletedAltars.has(savedSelected)) {
+=======
+  const safePreviousAltars = Array.isArray(previousAltars) ? previousAltars : [];
+  const [selectedAltarSlug, setSelectedAltarSlug] = useState<string>('al001');
+
+  useEffect(() => {
+    const savedSelected =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('cyber_altar_selected_slug')
+        : '';
+
+    if (savedSelected) {
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
       setSelectedAltarSlug(savedSelected);
       return;
     }
 
+<<<<<<< HEAD
     if (displayPreviousAltars.length > 0) {
       const firstSlug = normalizeSlug(displayPreviousAltars[0].altar_slug);
       setSelectedAltarSlug(firstSlug);
@@ -314,10 +335,27 @@ export default function AltarSelectionForm({
       }
 
       localStorage.setItem(getSelectedSlugKey(username), normalizedSlug);
+=======
+    if (safePreviousAltars.length > 0) {
+      setSelectedAltarSlug(safePreviousAltars[0].altar_slug);
+    }
+  }, [safePreviousAltars]);
+
+  const selectedAltar =
+    altarOptions.find((item) => item.altar_slug === selectedAltarSlug) ??
+    altarOptions[0];
+
+  const handleSelectAltar = (altarSlug: string) => {
+    setSelectedAltarSlug(altarSlug);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cyber_altar_selected_slug', altarSlug);
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
       localStorage.setItem('cyber_altar_username', username);
     }
   };
 
+<<<<<<< HEAD
   const writeHistory = (altarSlug: string) => {
     if (typeof window === 'undefined') return [];
 
@@ -436,6 +474,45 @@ export default function AltarSelectionForm({
     writeHistory(selectedAltar.altar_slug);
   };
 
+=======
+  const handleProceed = () => {
+    if (!selectedAltarSlug) return;
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cyber_altar_selected_slug', selectedAltarSlug);
+      localStorage.setItem('cyber_altar_username', username);
+
+      const historyKey = `cyber_altar_history_${username}`;
+      const existingRaw = localStorage.getItem(historyKey);
+
+      let history: PreviousAltarItem[] = [];
+
+      try {
+        history = existingRaw ? JSON.parse(existingRaw) : [];
+      } catch {
+        history = [];
+      }
+
+      const alreadyExists = history.some(
+        (item) => item.altar_slug === selectedAltarSlug
+      );
+
+      if (!alreadyExists) {
+        history.unshift({
+          altar_slug: selectedAltarSlug,
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      localStorage.setItem(historyKey, JSON.stringify(history));
+    }
+
+    router.push(
+      `/altar/${selectedAltarSlug}?username=${encodeURIComponent(username)}`
+    );
+  };
+
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
   const handleReturnToMain = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('cyber_altar_username', username);
@@ -469,6 +546,7 @@ export default function AltarSelectionForm({
           <div className="space-y-6">
             <div className="overflow-hidden rounded-3xl border border-amber-300/25 bg-slate-950/75 shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
               <div className="border-b border-white/10 px-5 py-4">
+<<<<<<< HEAD
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.22em] text-amber-200/80">
@@ -518,6 +596,14 @@ export default function AltarSelectionForm({
                     </div>
                   )}
                 </div>
+=======
+                <p className="text-xs uppercase tracking-[0.22em] text-amber-200/80">
+                  Presently Chosen Altar
+                </p>
+                <h2 className="mt-2 text-lg font-semibold text-white md:text-xl">
+                  {selectedAltar.altar_slug.toUpperCase()}
+                </h2>
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
               </div>
 
               <div className="bg-black/20 p-4 md:p-5">
@@ -543,9 +629,15 @@ export default function AltarSelectionForm({
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {altarOptions.map((item) => {
+<<<<<<< HEAD
                   const isSelected = item.altar_slug === normalizeSlug(selectedAltarSlug);
                   const isFormerlyChosen = displayPreviousAltars.some(
                     (altar) => normalizeSlug(altar.altar_slug) === item.altar_slug
+=======
+                  const isSelected = item.altar_slug === selectedAltarSlug;
+                  const isFormerlyChosen = safePreviousAltars.some(
+                    (altar) => altar.altar_slug === item.altar_slug
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
                   );
 
                   return (
@@ -566,7 +658,13 @@ export default function AltarSelectionForm({
                           src={item.image}
                           alt={item.altar_slug}
                           className={`h-full w-full object-cover transition duration-200 ${
+<<<<<<< HEAD
                             isSelected ? 'scale-[1.03]' : 'group-hover:scale-[1.02]'
+=======
+                            isSelected
+                              ? 'scale-[1.03]'
+                              : 'group-hover:scale-[1.02]'
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
                           }`}
                         />
                       </div>
@@ -581,7 +679,15 @@ export default function AltarSelectionForm({
                         }`}
                       >
                         {item.altar_slug.toUpperCase()}
+<<<<<<< HEAD
                         {isSelected ? ' • Selected' : isFormerlyChosen ? ' • Former' : ''}
+=======
+                        {isSelected
+                          ? ' • Selected'
+                          : isFormerlyChosen
+                          ? ' • Former'
+                          : ''}
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
                       </div>
                     </button>
                   );
@@ -620,7 +726,11 @@ export default function AltarSelectionForm({
             <div className="rounded-3xl border border-cyan-400/15 bg-slate-950/75 p-4 md:p-5">
               <PreviousAltarList
                 username={username}
+<<<<<<< HEAD
                 previousAltars={displayPreviousAltars}
+=======
+                previousAltars={safePreviousAltars}
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
                 selectedAltarSlug={selectedAltarSlug}
                 onSelectAltar={handleSelectAltar}
               />
@@ -630,4 +740,8 @@ export default function AltarSelectionForm({
       </div>
     </section>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4

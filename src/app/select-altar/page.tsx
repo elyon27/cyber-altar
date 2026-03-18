@@ -8,6 +8,7 @@ type PreviousAltarItem = {
   created_at?: string;
 };
 
+<<<<<<< HEAD
 function normalizeSlug(value?: string) {
   return (value || '').trim().toLowerCase();
 }
@@ -65,11 +66,14 @@ function mergeHistories(...lists: PreviousAltarItem[][]): PreviousAltarItem[] {
   });
 }
 
+=======
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
 export default function SelectAltarPage() {
   const [username, setUsername] = useState('Pilgrim');
   const [previousAltars, setPreviousAltars] = useState<PreviousAltarItem[]>([]);
 
   useEffect(() => {
+<<<<<<< HEAD
     if (typeof window === 'undefined') return;
 
     const savedUsername = localStorage.getItem('cyber_altar_username') || 'Pilgrim';
@@ -98,6 +102,23 @@ export default function SelectAltarPage() {
     );
 
     setPreviousAltars(mergedHistory);
+=======
+    const savedUsername = localStorage.getItem('cyber_altar_username') || 'Pilgrim';
+    setUsername(savedUsername);
+
+    const savedAltarsRaw = localStorage.getItem(`cyber_altar_history_${savedUsername}`);
+
+    if (savedAltarsRaw) {
+      try {
+        const parsed = JSON.parse(savedAltarsRaw);
+        if (Array.isArray(parsed)) {
+          setPreviousAltars(parsed);
+        }
+      } catch (error) {
+        console.error('Failed to parse altar history from localStorage:', error);
+      }
+    }
+>>>>>>> 81b4ab6c4f05e009b867cafac571aaa160ca4cc4
   }, []);
 
   return (
