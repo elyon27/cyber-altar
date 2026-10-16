@@ -240,40 +240,12 @@ function HolyPlaceContent() {
   const [submittingPrayer, setSubmittingPrayer] = useState(false);
   const [lightingCandle, setLightingCandle] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [globalCandleCount, setGlobalCandleCount] = useState(0);
-  const [globalPrayerCount, setGlobalPrayerCount] = useState(0);
 
   const altarImageSrc = useMemo(() => {
     return altarSlug ? `/altar/${altarSlug}.jpg` : '';
   }, [altarSlug]);
 
   const scriptureEntry = useMemo(() => getScriptureEntry(altarSlug), [altarSlug]);
-
-  const loadGlobalCandleCount = useCallback(async (currentAltarSlug: string) => {
-    const { data, error } = await supabase
-      .from('altar_profiles')
-      .select('candle_count')
-      .eq('altar_slug', currentAltarSlug);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    const total = (data ?? []).reduce(
-      (sum, item) => sum + (Number(item.candle_count) || 0),
-      0
-    );
-
-    setGlobalCandleCount(total);
-  }, []);
-
-  const loadGlobalPrayerCount = useCallback(async (currentAltarSlug: string) => {
-    const response = await fetch(`/api/prayer-count?altar_slug=${encodeURIComponent(currentAltarSlug)}`, { cache: 'no-store' });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Unable to load prayer count.');
-    setGlobalPrayerCount(result.count);
-
-  }, []);
 
   const loadPrayers = useCallback(async (profileId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -376,12 +348,10 @@ function HolyPlaceContent() {
 
       setProfile(nextProfile);
       await loadPrayers(nextProfile.id);
-      await loadGlobalCandleCount(currentAltarSlug);
-      await loadGlobalPrayerCount(currentAltarSlug);
 
       return nextProfile;
     },
-    [loadGlobalCandleCount, loadGlobalPrayerCount, loadPrayers]
+    [loadPrayers]
   );
 
   useEffect(() => {
@@ -452,7 +422,6 @@ function HolyPlaceContent() {
         },
         async () => {
           await loadPrayers(profile.id);
-          await loadGlobalPrayerCount(altarSlug);
         }
       )
       .subscribe();
@@ -468,7 +437,6 @@ function HolyPlaceContent() {
           filter: `altar_slug=eq.${altarSlug}`,
         },
         async () => {
-          await loadGlobalCandleCount(altarSlug);
 
           let profileQuery = supabase
             .from('altar_profiles')
@@ -509,8 +477,6 @@ function HolyPlaceContent() {
   }, [
     altarSlug,
     email,
-    loadGlobalCandleCount,
-    loadGlobalPrayerCount,
     loadPrayers,
     profile?.id,
     username,
@@ -560,7 +526,6 @@ function HolyPlaceContent() {
 
       setPrayerText('');
       await loadPrayers(profile.id);
-      await loadGlobalPrayerCount(profile.altar_slug);
 
       if (typeof window !== 'undefined') {
         const ownerKey = getOwnerKey(profile.username);
@@ -612,7 +577,6 @@ function HolyPlaceContent() {
         writeAltarHistory(username, altarSlug);
       }
 
-      await loadGlobalCandleCount(altarSlug);
     } catch (error) {
       console.error(error);
       setErrorMessage('Failed to light candle.');
@@ -726,7 +690,7 @@ function HolyPlaceContent() {
               )}
             </div>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
                 <p className="text-sm text-white/60">Your Prayers Offered</p>
                 <p className="mt-2 text-3xl font-bold">{prayers.length}</p>
@@ -737,15 +701,7 @@ function HolyPlaceContent() {
                 <p className="mt-2 text-3xl font-bold">{profile?.candle_count ?? 0}</p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <p className="text-sm text-white/60">Global Candles For This Altar</p>
-                <p className="mt-2 text-3xl font-bold">{globalCandleCount}</p>
-              </div>
 
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <p className="text-sm text-white/60">Global Prayers For This Altar</p>
-                <p className="mt-2 text-3xl font-bold">{globalPrayerCount}</p>
-              </div>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">

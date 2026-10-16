@@ -39,7 +39,7 @@ The wall refreshes on database events, focus, and every five seconds while visib
 - Prayer ownership is snapshotted from the existing altar profile email during setup. Later profile/name changes cannot transfer secret prayers to a different email.
 - Existing records without a profile email need manual ownership reconciliation by the site owner. They are not automatically assigned by a matching Pilgrim Name.
 - The script replaces the `altar_prayers` access policies, enables row-level security, and allows only the verified owner to change visibility. Review any custom views/RPCs outside this package that expose this table before deployment: service-role code and owner-created views can bypass RLS.
-- The global prayer count still includes public and secret prayers, but the count endpoint never returns prayer text or identities.
+- The Holy Place displays only the current pilgrim’s prayer and candle counters. The global counter panels and their page requests have been removed.
 - The unused legacy prayer-write endpoint now returns HTTP 410. Use the current Holy Place prayer form.
 - Altar deletion now requires the verified email session, checks server success, and runs transactionally.
 
