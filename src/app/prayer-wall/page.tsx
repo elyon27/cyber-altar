@@ -21,14 +21,13 @@ function formatDate(dateString: string) {
 export default function PrayerWallPage() {
   const [prayers, setPrayers] = useState<PrayerWallItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [holyPlaceHref, setHolyPlaceHref] = useState('/select-altar');
+  const [holyPlaceHref, setHolyPlaceHref] = useState<string | null>(null);
 
   useEffect(() => {
-    const requestedAltar = new URLSearchParams(window.location.search).get('altar');
-    let savedAltar = '';
-    try { savedAltar = localStorage.getItem('cyber_altar_selected_slug') || ''; } catch {}
-    const altar = requestedAltar || savedAltar;
-    if (/^al[0-9]{3}$/.test(altar)) setHolyPlaceHref(`/altar/${altar}`);
+    // Only the Holy Place link supplies an altar. Entrance visitors must not
+    // inherit a return destination from a previous pilgrim or browser visit.
+    const altar = new URLSearchParams(window.location.search).get('altar') || '';
+    setHolyPlaceHref(/^al[0-9]{3}$/.test(altar) ? `/altar/${altar}` : null);
   }, []);
 
   const [errorMessage, setErrorMessage] = useState('');
@@ -110,12 +109,21 @@ export default function PrayerWallPage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Link
+            {holyPlaceHref ? <Link
               href={holyPlaceHref}
               className="rounded-xl border border-cyan-400/40 bg-cyan-400/20 px-4 py-3 font-semibold text-cyan-100 hover:bg-cyan-400/30"
             >
               Back to My Holy Place
-            </Link>
+            </Link> : (
+              <button
+                type="button"
+                disabled
+                title="Enter your Holy Place before using this button."
+                className="cursor-not-allowed rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white/40"
+              >
+                Back to My Holy Place
+              </button>
+            )}
             <Link
               href="/"
               className="rounded-xl border border-white/20 px-4 py-3 font-medium hover:bg-white/10"
