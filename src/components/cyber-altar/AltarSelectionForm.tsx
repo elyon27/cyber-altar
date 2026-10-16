@@ -523,7 +523,10 @@ export default function AltarSelectionForm({
               <div className="bg-black/20 p-4 md:p-5">
                 <div className="overflow-hidden rounded-2xl border border-white/10">
                   <img
-                    src={selectedAltar.image}
+                    src={`/altar/preview-v1/${selectedAltar.altar_slug}.webp`}
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                     alt={selectedAltar.altar_slug}
                     className="h-[260px] w-full object-cover md:h-[420px]"
                   />
@@ -563,7 +566,11 @@ export default function AltarSelectionForm({
                     >
                       <div className="aspect-[4/3] overflow-hidden bg-black/20">
                         <img
-                          src={item.image}
+                          src={`/altar/thumbs-v1/${item.altar_slug}.webp`}
+                          loading="lazy"
+                          decoding="async"
+                          width={480}
+                          height={360}
                           alt={item.altar_slug}
                           className={`h-full w-full object-cover transition duration-200 ${
                             isSelected ? 'scale-[1.03]' : 'group-hover:scale-[1.02]'

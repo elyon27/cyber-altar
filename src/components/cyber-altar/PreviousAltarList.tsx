@@ -145,7 +145,7 @@ export default function PreviousAltarList({
             const slug = normalizeSlug(item.altar_slug);
             const counts = countsByAltar[slug] || { prayers: 0, candles: 0 };
             const isSelected = slug === normalizeSlug(selectedAltarSlug);
-            const imageSrc = `/altar/${slug}.jpg`;
+            const imageSrc = `/altar/thumbs-v1/${slug}.webp`;
 
             return (
               <button
