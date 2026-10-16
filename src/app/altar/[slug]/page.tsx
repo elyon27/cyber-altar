@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ type AltarProfile = {
 };
 
 type AltarPrayer = {
+  candle_count: number;
   is_public: boolean;
   id: string;
   profile_id: string;
@@ -238,7 +239,8 @@ function HolyPlaceContent() {
   const [visibilityMessage, setVisibilityMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [submittingPrayer, setSubmittingPrayer] = useState(false);
-  const [lightingCandle, setLightingCandle] = useState(false);
+  const [lightingPrayerId, setLightingPrayerId] = useState<string | null>(null);
+  const candleRequestPending = useRef(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const altarImageSrc = useMemo(() => {
@@ -540,48 +542,32 @@ function HolyPlaceContent() {
     }
   };
 
-  const handleLightCandle = async () => {
-    if (!profile) return;
-
+  const handleLightCandle = async (prayer: AltarPrayer) => {
+    if (!profile || prayer.profile_id !== profile.id || candleRequestPending.current) return;
+    candleRequestPending.current = true;
+    setLightingPrayerId(prayer.id);
+    setErrorMessage('');
     try {
-      setLightingCandle(true);
-      setErrorMessage('');
-
-      const nextCount = Number(profile.candle_count ?? 0) + 1;
-
-      if (typeof window !== 'undefined') {
-        const candleStorageKey = getCandleStorageKey(username, altarSlug);
-        localStorage.setItem(candleStorageKey, String(nextCount));
-      }
-
-      const { data, error } = await supabase
-        .from('altar_profiles')
-        .update({ candle_count: nextCount })
-        .eq('id', profile.id)
-        .select('*')
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      const updatedProfile = data as AltarProfile;
+      const { data, error } = await supabase.rpc('light_prayer_candle', {
+        p_prayer_id: prayer.id,
+      });
+      if (error) throw error;
+      if (!data?.profile || !data?.prayer) throw new Error('No candle confirmation received.');
+      const updatedProfile = data.profile as AltarProfile;
+      const updatedPrayer = data.prayer as AltarPrayer;
       setProfile(updatedProfile);
-
+      setPrayers(current => current.map(item => item.id === updatedPrayer.id ? updatedPrayer : item));
       if (typeof window !== 'undefined') {
-        const candleStorageKey = getCandleStorageKey(username, altarSlug);
-        localStorage.setItem(candleStorageKey, String(updatedProfile.candle_count ?? nextCount));
-
-        const ownerKey = getOwnerKey(username);
-        setStoredCandleCount(ownerKey, altarSlug, Number(updatedProfile.candle_count ?? nextCount));
+        localStorage.setItem(getCandleStorageKey(username, altarSlug), String(updatedProfile.candle_count));
+        setStoredCandleCount(getOwnerKey(username), altarSlug, Number(updatedProfile.candle_count));
         writeAltarHistory(username, altarSlug);
       }
-
     } catch (error) {
       console.error(error);
-      setErrorMessage('Failed to light candle.');
+      setErrorMessage('Unable to confirm the candle. Refresh to check the count before trying again. If this persists, ensure the prayer candle SQL setup has been run.');
     } finally {
-      setLightingCandle(false);
+      candleRequestPending.current = false;
+      setLightingPrayerId(null);
     }
   };
 
@@ -704,16 +690,6 @@ function HolyPlaceContent() {
 
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleLightCandle}
-                disabled={lightingCandle || !profile}
-                className="rounded-xl border border-amber-400/40 bg-amber-400/20 px-5 py-3 font-semibold text-amber-100 transition hover:bg-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {lightingCandle ? 'Lighting Candle...' : 'Light Candle'}
-              </button>
-            </div>
           </section>
 
           <aside className="space-y-6">
@@ -758,6 +734,17 @@ function HolyPlaceContent() {
                     >
                       <p className="whitespace-pre-wrap text-white/90">{prayer.prayer_text}</p>
                       <p className="mt-3 text-xs text-white/50">{formatDate(prayer.created_at)}</p>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <button type="button" onClick={() => handleLightCandle(prayer)}
+                          disabled={lightingPrayerId !== null || !profile}
+                          aria-label="Light a candle for this prayer"
+                          className="rounded-xl border border-amber-400/40 bg-amber-400/20 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60">
+                          {lightingPrayerId === prayer.id ? 'Lighting Candle...' : 'Light Candle'}
+                        </button>
+                        <span role="status" aria-live="polite" className="text-sm text-amber-100">
+                          Candles Lighted: <strong>{prayer.candle_count ?? 0}</strong>
+                        </span>
+                      </div>
                       <p className="mt-3 text-sm text-cyan-200">{prayer.is_public ? 'Public — visible on the Prayer Wall' : 'Secret — visible only to you'}</p>
                       <div className="mt-3 flex flex-wrap gap-2" aria-busy={!!savingVisibility[prayer.id]}>
                         <button type="button" onClick={() => setPrayerVisibility(prayer, true)}
