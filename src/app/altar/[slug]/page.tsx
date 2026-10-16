@@ -759,6 +759,21 @@ function HolyPlaceContent() {
                           Candles Lighted: <strong>{prayer.candle_count ?? 0}</strong>
                         </span>
                       </div>
+                      {(prayer.candle_count ?? 0) > 0 && (
+                        <div className="prayer-candles" role="img"
+                          aria-label={`${prayer.candle_count} lighted candles for this prayer`}>
+                          {Array.from({ length: prayer.candle_count ?? 0 }, (_, index) => (
+                            <span className="prayer-candle" key={index} aria-hidden="true">
+                              <span className="prayer-candle-flame" style={{
+                                animationDelay: `${-(index % 11) * 0.19}s`,
+                                animationDuration: `${1.1 + (index % 7) * 0.13}s`,
+                              }} />
+                              <span className="prayer-candle-wick" />
+                              <span className="prayer-candle-wax" />
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <p className="mt-3 text-sm text-cyan-200">{prayer.is_public ? 'Public — visible on the Prayer Wall' : 'Secret — visible only to you'}</p>
                       <div className="mt-3 flex flex-wrap gap-2" aria-busy={!!savingVisibility[prayer.id]}>
                         <button type="button" onClick={() => setPrayerVisibility(prayer, true)}

@@ -24,3 +24,45 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* One lightweight, independently flickering candle per saved prayer candle. */
+.prayer-candles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 16px 10px 10px;
+  margin-top: 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.prayer-candle { position: relative; width: 28px; height: 68px; flex: 0 0 28px; }
+.prayer-candle-wax {
+  position: absolute; bottom: 0; left: 5px; width: 18px; height: 40px;
+  border-radius: 4px 4px 3px 3px;
+  background: linear-gradient(90deg, #c7a469, #fff3cc 45%, #e4c48b);
+  box-shadow: inset 0 3px 2px #fff7dd, 0 3px 6px #0005;
+}
+.prayer-candle-wick {
+  position: absolute; left: 13px; bottom: 39px; width: 2px; height: 7px;
+  background: #493421;
+}
+.prayer-candle-flame {
+  position: absolute; left: 8px; bottom: 45px; width: 12px; height: 22px;
+  border-radius: 60% 40% 55% 45%;
+  background: radial-gradient(ellipse at 50% 80%, #fffde4 0 20%, #ffe48a 35%, #ffb52e 65%, #ef7318 95%);
+  box-shadow: 0 0 9px 3px #ffbe4355;
+  transform-origin: center bottom;
+  animation: prayer-candle-flicker 1.3s ease-in-out infinite alternate;
+}
+@keyframes prayer-candle-flicker {
+  0%, 100% { transform: rotate(-4deg) scale(0.96, 1); opacity: 0.95; }
+  25% { transform: rotate(3deg) scale(1.05, 0.92); opacity: 0.85; }
+  50% { transform: rotate(-2deg) scale(0.92, 1.08); opacity: 1; }
+  75% { transform: rotate(5deg) scale(1, 0.96); opacity: 0.9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prayer-candle-flame { animation: none; }
+}
