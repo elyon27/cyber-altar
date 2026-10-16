@@ -66,3 +66,18 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .prayer-candle-flame { animation: none; }
 }
+
+/* Keep the prayer viewer one row tall, even for long prayers or many candles. */
+.prayer-carousel { height: 420px; min-width: 0; overflow: hidden; }
+.prayer-carousel-card {
+  height: 100%; overflow-y: auto; overflow-wrap: anywhere;
+  overscroll-behavior: contain;
+  animation: prayer-slide-in 180ms ease-out;
+}
+@keyframes prayer-slide-in {
+  from { opacity: 0.65; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prayer-carousel-card { animation: none; }
+}

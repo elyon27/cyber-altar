@@ -235,6 +235,11 @@ function HolyPlaceContent() {
   const [profile, setProfile] = useState<AltarProfile | null>(null);
   const [prayers, setPrayers] = useState<AltarPrayer[]>([]);
   const [prayerText, setPrayerText] = useState('');
+  const [prayerIndex, setPrayerIndex] = useState(0);
+  const orderedPrayers = useMemo(() => [...prayers].sort((a, b) =>
+    a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id)), [prayers]);
+  const currentPrayerIndex = Math.min(prayerIndex, Math.max(0, orderedPrayers.length - 1));
+
   const [savingVisibility, setSavingVisibility] = useState<Record<string, boolean>>({});
   const [visibilityMessage, setVisibilityMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -706,7 +711,7 @@ function HolyPlaceContent() {
 
           </section>
 
-          <aside className="space-y-6">
+          <aside className="min-w-0 space-y-6">
             <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <h2 className="text-xl font-semibold">Offer a Prayer</h2>
               <p className="mt-2 text-sm text-white/70">New prayers are secret until you choose Paste Prayer On Wall.</p>
@@ -735,16 +740,18 @@ function HolyPlaceContent() {
               <h2 className="text-xl font-semibold">Your Offered Prayers</h2>
               <p role="status" aria-live="polite" className="mt-2 text-sm text-amber-200">{visibilityMessage}</p>
 
-              <div className="mt-4 space-y-3">
+              <div id="offered-prayer-view" className="mt-4 prayer-carousel">
                 {prayers.length === 0 ? (
                   <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-white/65">
                     No prayers offered yet.
                   </div>
                 ) : (
-                  prayers.map((prayer) => (
+                  orderedPrayers.slice(currentPrayerIndex, currentPrayerIndex + 1).map((prayer) => (
                     <article
                       key={prayer.id}
-                      className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                      className="prayer-carousel-card rounded-2xl border border-white/10 bg-black/20 p-4"
+                      aria-label={`Prayer ${currentPrayerIndex + 1} of ${orderedPrayers.length}`}
+                      tabIndex={0}
                     >
                       <p className="whitespace-pre-wrap text-white/90">{prayer.prayer_text}</p>
                       <p className="mt-3 text-xs text-white/50">{formatDate(prayer.created_at)}</p>
@@ -788,6 +795,23 @@ function HolyPlaceContent() {
                   ))
                 )}
               </div>
+              <nav className="mt-4 flex items-center justify-between gap-3" aria-label="Offered prayer navigation">
+                <button type="button" aria-label="Previous prayer" aria-controls="offered-prayer-view"
+                  disabled={prayers.length === 0 || currentPrayerIndex === 0}
+                  onClick={() => setPrayerIndex(Math.max(0, currentPrayerIndex - 1))}
+                  className="rounded-xl border border-white/20 px-4 py-2 text-xl disabled:cursor-not-allowed disabled:opacity-30">
+                  <span aria-hidden="true">←</span>
+                </button>
+                <span role="status" aria-live="polite" className="text-sm text-white/70">
+                  {prayers.length ? `Prayer ${currentPrayerIndex + 1} of ${prayers.length}` : 'No prayers'}
+                </span>
+                <button type="button" aria-label="Next prayer" aria-controls="offered-prayer-view"
+                  disabled={prayers.length === 0 || currentPrayerIndex >= prayers.length - 1}
+                  onClick={() => setPrayerIndex(Math.min(prayers.length - 1, currentPrayerIndex + 1))}
+                  className="rounded-xl border border-white/20 px-4 py-2 text-xl disabled:cursor-not-allowed disabled:opacity-30">
+                  <span aria-hidden="true">→</span>
+                </button>
+              </nav>
             </section>
           </aside>
         </div>
