@@ -11,6 +11,7 @@ type PrayerWallItem = {
   altar_slug: string;
   prayer_text: string;
   created_at: string;
+  candle_count: number | null;
 };
 
 function formatDate(dateString: string) {
@@ -35,7 +36,7 @@ export default function PrayerWallPage() {
   const loadPrayers = useCallback(async () => {
     const { data, error } = await supabase
       .from('altar_prayers')
-      .select('id, profile_id, username, altar_slug, prayer_text, created_at')
+      .select('id, profile_id, username, altar_slug, prayer_text, created_at, candle_count')
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -156,9 +157,14 @@ export default function PrayerWallPage() {
               className="rounded-2xl border border-cyan-400/10 bg-slate-900/60 p-5"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-cyan-200">
-                  Pilgrim: {prayer.username}
-                </p>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <p className="text-sm font-semibold text-cyan-200">
+                    Pilgrim: {prayer.username}
+                  </p>
+                  <p className="text-sm text-amber-100">
+                    Candles Lighted: <strong>{prayer.candle_count ?? 0}</strong>
+                  </p>
+                </div>
                 <p className="text-xs uppercase tracking-wide text-white/50">
                   Altar: {prayer.altar_slug.toUpperCase()}
                 </p>
