@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import VerifiedPilgrimGate from '@/components/cyber-altar/VerifiedPilgrimGate';
 
 type AltarProfile = {
   id: string;
@@ -17,6 +18,7 @@ type AltarProfile = {
 };
 
 type AltarPrayer = {
+  is_public: boolean;
   id: string;
   profile_id: string;
   username: string;
@@ -219,6 +221,10 @@ function writeAltarHistory(currentUsername: string, altarSlug: string) {
 }
 
 export default function HolyPlacePage() {
+  return <VerifiedPilgrimGate><HolyPlaceContent /></VerifiedPilgrimGate>;
+}
+
+function HolyPlaceContent() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
 
@@ -228,6 +234,8 @@ export default function HolyPlacePage() {
   const [profile, setProfile] = useState<AltarProfile | null>(null);
   const [prayers, setPrayers] = useState<AltarPrayer[]>([]);
   const [prayerText, setPrayerText] = useState('');
+  const [savingVisibility, setSavingVisibility] = useState<Record<string, boolean>>({});
+  const [visibilityMessage, setVisibilityMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [submittingPrayer, setSubmittingPrayer] = useState(false);
   const [lightingCandle, setLightingCandle] = useState(false);
@@ -260,23 +268,21 @@ export default function HolyPlacePage() {
   }, []);
 
   const loadGlobalPrayerCount = useCallback(async (currentAltarSlug: string) => {
-    const { count, error } = await supabase
-      .from('altar_prayers')
-      .select('*', { count: 'exact', head: true })
-      .eq('altar_slug', currentAltarSlug);
+    const response = await fetch(`/api/prayer-count?altar_slug=${encodeURIComponent(currentAltarSlug)}`, { cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Unable to load prayer count.');
+    setGlobalPrayerCount(result.count);
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    setGlobalPrayerCount(count || 0);
   }, []);
 
   const loadPrayers = useCallback(async (profileId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) { setPrayers([]); throw new Error('Please verify your email again.'); }
     const { data, error } = await supabase
       .from('altar_prayers')
       .select('*')
       .eq('profile_id', profileId)
+      .eq('owner_email', user.email.toLowerCase())
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -510,6 +516,24 @@ export default function HolyPlacePage() {
     username,
   ]);
 
+  const setPrayerVisibility = async (prayer: AltarPrayer, isPublic: boolean) => {
+    if (savingVisibility[prayer.id]) return;
+    setSavingVisibility(current => ({ ...current, [prayer.id]: true }));
+    setVisibilityMessage('');
+    try {
+      const { data, error } = await supabase.from('altar_prayers')
+        .update({ is_public: isPublic }).eq('id', prayer.id)
+        .select('id, is_public').single();
+      if (error || !data) throw error || new Error('Prayer was not updated.');
+      setPrayers(current => current.map(item => item.id === data.id ? { ...item, is_public: data.is_public } : item));
+      setVisibilityMessage(isPublic ? 'Prayer posted on the public Prayer Wall.' : 'Prayer is now secret and removed from the Prayer Wall.');
+    } catch {
+      setVisibilityMessage('Could not change visibility. Please verify your email and try again.');
+    } finally {
+      setSavingVisibility(current => ({ ...current, [prayer.id]: false }));
+    }
+  };
+
   const handleSubmitPrayer = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -527,6 +551,7 @@ export default function HolyPlacePage() {
         username: profile.username,
         altar_slug: profile.altar_slug,
         prayer_text: trimmedPrayer,
+        is_public: false,
       });
 
       if (error) {
@@ -738,6 +763,7 @@ export default function HolyPlacePage() {
           <aside className="space-y-6">
             <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <h2 className="text-xl font-semibold">Offer a Prayer</h2>
+              <p className="mt-2 text-sm text-white/70">New prayers are secret until you choose Paste Prayer On Wall.</p>
 
               <form className="mt-4 space-y-4" onSubmit={handleSubmitPrayer}>
                 <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
@@ -761,6 +787,7 @@ export default function HolyPlacePage() {
 
             <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <h2 className="text-xl font-semibold">Your Offered Prayers</h2>
+              <p role="status" aria-live="polite" className="mt-2 text-sm text-amber-200">{visibilityMessage}</p>
 
               <div className="mt-4 space-y-3">
                 {prayers.length === 0 ? (
@@ -775,6 +802,16 @@ export default function HolyPlacePage() {
                     >
                       <p className="whitespace-pre-wrap text-white/90">{prayer.prayer_text}</p>
                       <p className="mt-3 text-xs text-white/50">{formatDate(prayer.created_at)}</p>
+                      <p className="mt-3 text-sm text-cyan-200">{prayer.is_public ? 'Public — visible on the Prayer Wall' : 'Secret — visible only to you'}</p>
+                      <div className="mt-3 flex flex-wrap gap-2" aria-busy={!!savingVisibility[prayer.id]}>
+                        <button type="button" onClick={() => setPrayerVisibility(prayer, true)}
+                          disabled={!!savingVisibility[prayer.id] || prayer.is_public}
+                          className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Paste Prayer On Wall</button>
+                        <button type="button" onClick={() => setPrayerVisibility(prayer, false)}
+                          disabled={!!savingVisibility[prayer.id] || !prayer.is_public}
+                          className="rounded-xl border border-amber-300/60 px-4 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50">Keep Prayer Secret</button>
+                        {savingVisibility[prayer.id] && <span className="self-center text-sm text-white/70">Saving...</span>}
+                      </div>
                     </article>
                   ))
                 )}

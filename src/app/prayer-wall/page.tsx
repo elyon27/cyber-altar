@@ -25,7 +25,8 @@ export default function PrayerWallPage() {
   const loadPrayers = useCallback(async () => {
     const { data, error } = await supabase
       .from('altar_prayers')
-      .select('*')
+      .select('id, profile_id, username, altar_slug, prayer_text, created_at')
+      .eq('is_public', true)
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -64,12 +65,24 @@ export default function PrayerWallPage() {
           table: 'altar_prayers',
         },
         async () => {
-          await loadPrayers();
+          try { await loadPrayers(); } catch { setPrayers([]); setErrorMessage('Unable to refresh the Prayer Wall.'); }
         }
       )
       .subscribe();
 
-    return () => {
+    useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') {
+        loadPrayers().catch(() => { setPrayers([]); setErrorMessage('Unable to refresh the Prayer Wall.'); });
+      }
+    };
+    const timer = window.setInterval(refresh, 5000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, [loadPrayers]);
+
+  return () => {
       supabase.removeChannel(channel);
     };
   }, [loadPrayers]);

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PreviousAltarList from './PreviousAltarList';
@@ -370,22 +371,19 @@ export default function AltarSelectionForm({
     setIsDeletingAltar(true);
 
     try {
-      purgeLocalAltarData(username, slugToDelete);
-
-      try {
-        await fetch('/api/delete-altar', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username,
-            altar_slug: slugToDelete,
-          }),
-        });
-      } catch {
-        // keep local deletion working even if the API route is not present yet
+      const { data: { session } } = await supabase.auth.getSession();
+      const selectedEmail = (localStorage.getItem('cyber_altar_email') || '').trim().toLowerCase();
+      if (!session || session.user.email?.toLowerCase() !== selectedEmail) {
+        throw new Error('Please verify your email in the Holy Place before deleting an altar.');
       }
+      const response = await fetch('/api/delete-altar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ username, altar_slug: slugToDelete }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to delete the altar.');
+      purgeLocalAltarData(username, slugToDelete);
 
       const deletedAltars = getDeletedAltars(username);
       deletedAltars.add(slugToDelete);
@@ -416,6 +414,8 @@ export default function AltarSelectionForm({
       }
 
       window.dispatchEvent(new CustomEvent('cyber-altar-history-updated'));
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Unable to delete the altar.');
     } finally {
       setIsDeletingAltar(false);
     }

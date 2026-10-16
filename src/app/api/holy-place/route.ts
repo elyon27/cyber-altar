@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const { data: prayers, error: prayersError } = await supabase
       .from('altar_prayers')
       .select('id, prayer_text, created_at')
+      .eq('is_public', true)
       .eq('username', username)
       .eq('altar_slug', altarSlug)
       .order('created_at', { ascending: false });
