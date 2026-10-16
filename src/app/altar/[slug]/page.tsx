@@ -616,7 +616,7 @@ function HolyPlaceContent() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-5">
           <div className="max-w-4xl">
-            <div className="flex flex-wrap items-start gap-3">
+            <div className="flex flex-col items-start gap-3">
               <h1 className="text-3xl font-bold">Holy Place</h1>
               <div className="flex w-full max-w-2xl items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-3">
                 <button type="button" aria-label="Previous Scripture" aria-controls="holy-place-scripture"
