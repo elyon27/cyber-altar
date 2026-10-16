@@ -129,7 +129,7 @@ function getLegacyHistoryKeys(username: string) {
     keys.add(`cyber_altar_history_${savedEmail}`);
   }
 
-  if (normalizedUsername) {
+  if (!savedEmail && normalizedUsername) {
     keys.add(`cyber_altar_history_${normalizedUsername}`);
   }
 
@@ -459,13 +459,21 @@ export default function AltarSelectionForm({
             Select the Altar Picture
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 md:text-base">
-            Choose the altar picture that will represent this Holy Place. If you
-            click a formerly chosen altar from your history, the matching altar
-            in the general list below will also highlight.
+            Choose an altar picture below, or click an altar in your history to open its Holy Place information sheet.
           </p>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="rounded-3xl border border-cyan-400/15 bg-slate-950/75 p-4 md:p-5">
+          <PreviousAltarList
+            key={getOwnerKey(username)}
+            username={username}
+            previousAltars={displayPreviousAltars}
+            selectedAltarSlug={selectedAltarSlug}
+            onSelectAltar={(slug) => { handleSelectAltar(slug); writeHistory(slug); }}
+          />
+        </div>
+
+        <div className="grid gap-6">
           <div className="space-y-6">
             <div className="overflow-hidden rounded-3xl border border-amber-300/25 bg-slate-950/75 shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
               <div className="border-b border-white/10 px-5 py-4">
@@ -623,16 +631,7 @@ export default function AltarSelectionForm({
             </div>
           </div>
 
-          <aside className="xl:sticky xl:top-6 xl:self-start">
-            <div className="rounded-3xl border border-cyan-400/15 bg-slate-950/75 p-4 md:p-5">
-              <PreviousAltarList
-                username={username}
-                previousAltars={displayPreviousAltars}
-                selectedAltarSlug={selectedAltarSlug}
-                onSelectAltar={handleSelectAltar}
-              />
-            </div>
-          </aside>
+
         </div>
       </div>
     </section>
