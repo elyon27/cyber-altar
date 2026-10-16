@@ -38,6 +38,8 @@ export default function PreviousAltarList({
   const safePreviousAltars = Array.isArray(previousAltars) ? previousAltars : [];
   const [countsByAltar, setCountsByAltar] = useState<CountMap>({});
   const [loadingCounts, setLoadingCounts] = useState(true);
+  const [countsError, setCountsError] = useState('');
+  const [retryCounts, setRetryCounts] = useState(0);
 
   const uniqueAltars = useMemo(() => {
     const seen = new Set<string>();
@@ -50,81 +52,78 @@ export default function PreviousAltarList({
     });
   }, [safePreviousAltars]);
 
+  // Depend on the actual slugs, not a new history-array reference on each refresh.
+  const altarSlugKey = [...new Set(uniqueAltars.map(item => normalizeSlug(item.altar_slug)))].sort().join(',');
+
   useEffect(() => {
     let active = true;
+    let busy = false;
+    let controller: AbortController | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    setCountsByAltar({});
 
     const loadCounts = async () => {
-      if (!uniqueAltars.length) {
-        if (active) {
-          setCountsByAltar({});
-          setLoadingCounts(false);
-        }
+      if (busy || !active) return;
+      const altarSlugs = altarSlugKey ? altarSlugKey.split(',') : [];
+      if (!altarSlugs.length) {
+        setLoadingCounts(false);
+        setCountsError('');
         return;
       }
-
+      busy = true;
+      controller = new AbortController();
+      const signal = controller.signal;
+      setLoadingCounts(true);
+      setCountsError('');
       try {
-        setLoadingCounts(true);
-
-        const email = (localStorage.getItem('cyber_altar_email') || '')
-          .trim()
-          .toLowerCase();
-
-        const altarSlugs = uniqueAltars
-          .map((item) => normalizeSlug(item.altar_slug))
-          .filter(Boolean);
-
+        const email = (localStorage.getItem('cyber_altar_email') || '').trim().toLowerCase();
+        const requests = Promise.all([
+          supabase.from('altar_prayers').select('altar_slug')
+            .in('altar_slug', altarSlugs)
+            .eq(email ? 'owner_email' : 'username', email || username).abortSignal(signal),
+          supabase.from('altar_profiles').select('altar_slug, candle_count')
+            .in('altar_slug', altarSlugs)
+            .eq(email ? 'email' : 'username', email || username).abortSignal(signal),
+        ]);
+        // Race the entire operation: an auth/session wait can occur before fetch starts.
+        const timeout = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            controller?.abort();
+            reject(new Error('Counts request timed out'));
+          }, 12000);
+        });
+        const [prayerResult, profileResult] = await Promise.race([requests, timeout]);
+        if (prayerResult.error) throw prayerResult.error;
+        if (profileResult.error) throw profileResult.error;
         const nextCounts: CountMap = {};
-
-        for (const slug of altarSlugs) {
-          nextCounts[slug] = { prayers: 0, candles: 0 };
+        for (const slug of altarSlugs) nextCounts[slug] = { prayers: 0, candles: 0 };
+        for (const row of prayerResult.data || []) {
+          const count = nextCounts[normalizeSlug(row.altar_slug)];
+          if (count) count.prayers += 1;
         }
-
-        // PRAYERS
-        const { data: prayers, error: prayerError } = await supabase
-          .from('altar_prayers')
-          .select('altar_slug, username')
-          .in('altar_slug', altarSlugs)
-          .eq(email ? 'owner_email' : 'username', email || username);
-
-        if (!prayerError) {
-          for (const row of prayers || []) {
-            const slug = normalizeSlug((row as any).altar_slug);
-            if (!slug) continue;
-            nextCounts[slug].prayers += 1;
-          }
+        for (const row of profileResult.data || []) {
+          const count = nextCounts[normalizeSlug(row.altar_slug)];
+          if (count) count.candles += Number(row.candle_count || 0);
         }
-
-        // CANDLES
-        const { data: profiles, error: profileError } = await supabase
-          .from('altar_profiles')
-          .select('altar_slug, candle_count')
-          .in('altar_slug', altarSlugs)
-          .eq(email ? 'email' : 'username', email || username);
-
-        if (!profileError) {
-          for (const row of profiles || []) {
-            const slug = normalizeSlug((row as any).altar_slug);
-            if (!slug) continue;
-            nextCounts[slug].candles += Number((row as any).candle_count || 0);
-          }
-        }
-
         if (active) setCountsByAltar(nextCounts);
-      } catch (error) {
-        console.error('Failed to load altar counts:', error);
+      } catch {
+        if (active) setCountsError('Unable to refresh prayer and candle totals. Please retry.');
       } finally {
+        clearTimeout(timer);
+        busy = false;
         if (active) setLoadingCounts(false);
       }
     };
-
-    loadCounts();
-    window.addEventListener('focus', loadCounts);
-
+    const refresh = () => { if (!document.hidden) void loadCounts(); };
+    void loadCounts();
+    window.addEventListener('focus', refresh);
     return () => {
       active = false;
-      window.removeEventListener('focus', loadCounts);
+      clearTimeout(timer);
+      controller?.abort();
+      window.removeEventListener('focus', refresh);
     };
-  }, [username, uniqueAltars]);
+  }, [username, altarSlugKey, retryCounts]);
 
   return (
     <div>
@@ -136,6 +135,15 @@ export default function PreviousAltarList({
         Your Altar History — {username}
       </h3>
 
+      {countsError && (
+        <div role="status" className="mt-3 flex flex-wrap items-center gap-3 text-sm text-amber-200">
+          <span>{countsError}</span>
+          <button type="button" onClick={() => setRetryCounts(value => value + 1)}
+            className="rounded-lg border border-amber-300/40 px-3 py-2 hover:bg-amber-300/10">
+            Retry totals
+          </button>
+        </div>
+      )}
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {uniqueAltars.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-4 text-sm text-slate-300">
@@ -144,7 +152,7 @@ export default function PreviousAltarList({
         ) : (
           uniqueAltars.map((item) => {
             const slug = normalizeSlug(item.altar_slug);
-            const counts = countsByAltar[slug] || { prayers: 0, candles: 0 };
+            const counts = countsByAltar[slug];
             const isSelected = slug === normalizeSlug(selectedAltarSlug);
             const imageSrc = `/altar/thumbs-v1/${slug}.webp`;
 
@@ -178,9 +186,9 @@ export default function PreviousAltarList({
                     </div>
 
                     <div className="mt-1 text-sm text-slate-300">
-                      {loadingCounts
-                        ? 'Loading...'
-                        : `Prayer ${counts.prayers} | Candles ${counts.candles}`}
+                      {counts
+                        ? `Prayer ${counts.prayers} | Candles ${counts.candles}${countsError ? ' (last loaded)' : ''}`
+                        : loadingCounts ? 'Loading totals...' : 'Totals unavailable'}
                     </div>
                     <p className="mt-2 text-xs text-cyan-200">Open altar information →</p>
                   </div>
