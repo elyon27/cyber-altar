@@ -127,13 +127,6 @@ function formatDate(dateString: string) {
   }
 }
 
-function getScriptureEntry(altarSlug: string) {
-  return (
-    ALTAR_SCRIPTURES.find((item) => item.altar_slug === altarSlug) ??
-    ALTAR_SCRIPTURES[0]
-  );
-}
-
 function getCandleStorageKey(username: string, altarSlug: string) {
   return `cyber_altar_candles_${username}_${altarSlug}`;
 }
@@ -252,7 +245,12 @@ function HolyPlaceContent() {
     return altarSlug ? `/altar/${altarSlug}.jpg` : '';
   }, [altarSlug]);
 
-  const scriptureEntry = useMemo(() => getScriptureEntry(altarSlug), [altarSlug]);
+  const [scriptureIndex, setScriptureIndex] = useState(() =>
+    Math.max(0, ALTAR_SCRIPTURES.findIndex(item => item.altar_slug === altarSlug)));
+  useEffect(() => {
+    setScriptureIndex(Math.max(0, ALTAR_SCRIPTURES.findIndex(item => item.altar_slug === altarSlug)));
+  }, [altarSlug]);
+  const scriptureEntry = ALTAR_SCRIPTURES[scriptureIndex];
 
   const loadPrayers = useCallback(async (profileId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -620,11 +618,26 @@ function HolyPlaceContent() {
           <div className="max-w-4xl">
             <div className="flex flex-wrap items-start gap-3">
               <h1 className="text-3xl font-bold">Holy Place</h1>
-              <div className="max-w-2xl rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/80">
-                  {scriptureEntry.key.toUpperCase()} • {scriptureEntry.reference}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-amber-50">{scriptureEntry.text}</p>
+              <div className="flex w-full max-w-2xl items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-3">
+                <button type="button" aria-label="Previous Scripture" aria-controls="holy-place-scripture"
+                  disabled={scriptureIndex === 0}
+                  onClick={() => setScriptureIndex(index => Math.max(0, index - 1))}
+                  className="shrink-0 rounded-xl border border-amber-300/30 px-3 py-2 text-xl text-amber-100 hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-30">
+                  <span aria-hidden="true">←</span>
+                </button>
+                <div id="holy-place-scripture" className="min-w-0 flex-1" role="status" aria-live="polite" aria-atomic="true">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200/80">
+                    {scriptureEntry.key.toUpperCase()} • {scriptureEntry.reference}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-amber-50">{scriptureEntry.text}</p>
+                  <p className="mt-2 text-xs text-amber-200/70">Scripture {scriptureIndex + 1} of {ALTAR_SCRIPTURES.length}</p>
+                </div>
+                <button type="button" aria-label="Next Scripture" aria-controls="holy-place-scripture"
+                  disabled={scriptureIndex === ALTAR_SCRIPTURES.length - 1}
+                  onClick={() => setScriptureIndex(index => Math.min(ALTAR_SCRIPTURES.length - 1, index + 1))}
+                  className="shrink-0 rounded-xl border border-amber-300/30 px-3 py-2 text-xl text-amber-100 hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-30">
+                  <span aria-hidden="true">→</span>
+                </button>
               </div>
             </div>
             <p className="mt-3 text-white/75">Pilgrim: {username}</p>
