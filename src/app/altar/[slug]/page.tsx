@@ -687,6 +687,20 @@ function HolyPlaceContent() {
                 <p className="mt-2 text-3xl font-bold">{profile?.candle_count ?? 0}</p>
               </div>
 
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-sm text-white/60">Public Prayers</p>
+                <p role="status" aria-live="polite" aria-label="Public prayers count" className="mt-2 text-3xl font-bold">
+                  {prayers.filter(prayer => prayer.is_public).length}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-sm text-white/60">Secret Prayers</p>
+                <p role="status" aria-live="polite" aria-label="Secret prayers count" className="mt-2 text-3xl font-bold">
+                  {prayers.filter(prayer => !prayer.is_public).length}
+                </p>
+              </div>
+
 
             </div>
 
