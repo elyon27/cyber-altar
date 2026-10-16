@@ -1,0 +1,36 @@
+CYBER ALTAR — EMAIL-FIRST ONBOARDING
+
+1. In Supabase, open the Cyber Altar project (not your other projects).
+2. Open SQL Editor > New query.
+3. Paste the complete contents of supabase/pilgrim-onboarding-setup.sql and click Run.
+   This adds a protected enrollment table and a server-only transactional function.
+   It does not delete existing altar or prayer records.
+4. Confirm Netlify has NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
+   for this same Cyber Altar project. Keep the service-role key server-only.
+5. Copy this package into your existing project, replace matching files, and deploy.
+6. Test an existing email, a new email, and Change Pilgrim Name.
+
+FLOW
+- Email Address is shown first. Click Check Email Address (or press Enter).
+- Returning pilgrims see their saved name, with Change Pilgrim Name and Cancel.
+- New pilgrims enter a Pilgrim Name before continuing.
+- Existing names are recovered from the earliest available altar profile when no
+  enrollment record exists. The current name is saved after a deliberate change.
+- Names previously stored only in a browser, with no database altar record,
+  cannot be recovered on another device; those visitors need to enroll once.
+- A name change updates the matching email's altar profiles and their linked
+  prayer names in one database transaction, retaining prayers and candles.
+- Failed lookups never identify someone as a new pilgrim. Failed saves do not
+  navigate into the console.
+
+This keeps the application's existing email-based recognition model. It does
+not verify email ownership or add password/OTP authentication; knowing an email
+can reveal its Pilgrim Name and permit a name change through this public flow.
+
+VALIDATION
+TypeScript check passed. Database behavior was tested using an isolated local
+Postgres-compatible engine with synthetic altar/prayer records, including
+case normalization, legacy lookup, duplicate enrollment/name rejection, rename,
+prayer/candle preservation, stale update rejection, and restricted RPC access.
+The live Cyber Altar database is not accessible through the connected account;
+the SQL setup and live deployment have not been performed here.
