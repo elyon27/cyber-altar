@@ -20,6 +20,16 @@ function formatDate(dateString: string) {
 export default function PrayerWallPage() {
   const [prayers, setPrayers] = useState<PrayerWallItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [holyPlaceHref, setHolyPlaceHref] = useState('/select-altar');
+
+  useEffect(() => {
+    const requestedAltar = new URLSearchParams(window.location.search).get('altar');
+    let savedAltar = '';
+    try { savedAltar = localStorage.getItem('cyber_altar_selected_slug') || ''; } catch {}
+    const altar = requestedAltar || savedAltar;
+    if (/^al[0-9]{3}$/.test(altar)) setHolyPlaceHref(`/altar/${altar}`);
+  }, []);
+
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadPrayers = useCallback(async () => {
@@ -70,7 +80,12 @@ export default function PrayerWallPage() {
       )
       .subscribe();
 
-    useEffect(() => {
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadPrayers]);
+
+  useEffect(() => {
     const refresh = () => {
       if (document.visibilityState === 'visible') {
         loadPrayers().catch(() => { setPrayers([]); setErrorMessage('Unable to refresh the Prayer Wall.'); });
@@ -80,11 +95,6 @@ export default function PrayerWallPage() {
     window.addEventListener('focus', refresh);
     document.addEventListener('visibilitychange', refresh);
     return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
-  }, [loadPrayers]);
-
-  return () => {
-      supabase.removeChannel(channel);
-    };
   }, [loadPrayers]);
 
   return (
@@ -99,6 +109,12 @@ export default function PrayerWallPage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
+            <Link
+              href={holyPlaceHref}
+              className="rounded-xl border border-cyan-400/40 bg-cyan-400/20 px-4 py-3 font-semibold text-cyan-100 hover:bg-cyan-400/30"
+            >
+              Back to My Holy Place
+            </Link>
             <Link
               href="/"
               className="rounded-xl border border-white/20 px-4 py-3 font-medium hover:bg-white/10"

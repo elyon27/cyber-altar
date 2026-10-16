@@ -709,6 +709,12 @@ function HolyPlaceContent() {
 
             </div>
 
+            <Link
+              href={`/prayer-wall?altar=${encodeURIComponent(altarSlug)}`}
+              className="mt-5 inline-flex items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-400/20 px-5 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-400/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-300"
+            >
+              View Prayer Wall
+            </Link>
           </section>
 
           <aside className="min-w-0 space-y-6">
