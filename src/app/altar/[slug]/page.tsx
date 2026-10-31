@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { activeCandleTimes } from '@/lib/candle-lifetime';
+import MeltingCandles from '@/components/cyber-altar/MeltingCandles';
 import VerifiedPilgrimGate from '@/components/cyber-altar/VerifiedPilgrimGate';
 
 type AltarProfile = {
@@ -18,6 +20,7 @@ type AltarProfile = {
 };
 
 type AltarPrayer = {
+  candle_lit_at: string[];
   candle_count: number;
   is_public: boolean;
   id: string;
@@ -227,6 +230,15 @@ function HolyPlaceContent() {
   const [email, setEmail] = useState('');
   const [profile, setProfile] = useState<AltarProfile | null>(null);
   const [prayers, setPrayers] = useState<AltarPrayer[]>([]);
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const timer = window.setInterval(tick, 1000);
+    window.addEventListener('focus', tick);
+    document.addEventListener('visibilitychange', tick);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick); };
+  }, []);
+  const activeCandleCount = prayers.reduce((sum, prayer) => sum + activeCandleTimes(prayer.candle_lit_at, now).length, 0);
   const [prayerText, setPrayerText] = useState('');
   const [prayerIndex, setPrayerIndex] = useState(0);
   const orderedPrayers = useMemo(() => [...prayers].sort((a, b) =>
@@ -268,6 +280,14 @@ function HolyPlaceContent() {
 
     setPrayers((data ?? []) as AltarPrayer[]);
   }, []);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const refresh = () => { if (!document.hidden) void loadPrayers(profile.id).catch(console.error); };
+    const timer = window.setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); };
+  }, [profile?.id, loadPrayers]);
 
   const ensureProfile = useCallback(
     async (currentUsername: string, currentEmail: string, currentAltarSlug: string) => {
@@ -324,27 +344,6 @@ function HolyPlaceContent() {
 
       if (typeof window !== 'undefined') {
         const candleStorageKey = getCandleStorageKey(currentUsername, currentAltarSlug);
-        const storedCandleCount = localStorage.getItem(candleStorageKey);
-        const parsedStoredCount = storedCandleCount
-          ? Number.parseInt(storedCandleCount, 10)
-          : NaN;
-
-        if (
-          Number.isFinite(parsedStoredCount) &&
-          parsedStoredCount > Number(nextProfile.candle_count ?? 0)
-        ) {
-          const { data: updatedProfile, error: updateError } = await supabase
-            .from('altar_profiles')
-            .update({ candle_count: parsedStoredCount })
-            .eq('id', nextProfile.id)
-            .select('*')
-            .single();
-
-          if (!updateError && updatedProfile) {
-            nextProfile = updatedProfile as AltarProfile;
-          }
-        }
-
         localStorage.setItem(candleStorageKey, String(nextProfile.candle_count ?? 0));
         const ownerKey = getOwnerKey(currentUsername);
         setStoredCandleCount(ownerKey, currentAltarSlug, Number(nextProfile.candle_count ?? 0));
@@ -702,7 +701,7 @@ function HolyPlaceContent() {
 
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
                 <p className="text-sm text-white/60">Your Candles Lighted</p>
-                <p className="mt-2 text-3xl font-bold">{profile?.candle_count ?? 0}</p>
+                <p className="mt-2 text-3xl font-bold">{activeCandleCount}</p>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -782,24 +781,10 @@ function HolyPlaceContent() {
                           {lightingPrayerId === prayer.id ? 'Lighting Candle...' : 'Light Candle'}
                         </button>
                         <span role="status" aria-live="polite" className="text-sm text-amber-100">
-                          Candles Lighted: <strong>{prayer.candle_count ?? 0}</strong>
+                          Candles Lighted: <strong>{activeCandleTimes(prayer.candle_lit_at, now).length}</strong>
                         </span>
                       </div>
-                      {(prayer.candle_count ?? 0) > 0 && (
-                        <div className="prayer-candles" role="img"
-                          aria-label={`${prayer.candle_count} lighted candles for this prayer`}>
-                          {Array.from({ length: prayer.candle_count ?? 0 }, (_, index) => (
-                            <span className="prayer-candle" key={index} aria-hidden="true">
-                              <span className="prayer-candle-flame" style={{
-                                animationDelay: `${-(index % 11) * 0.19}s`,
-                                animationDuration: `${1.1 + (index % 7) * 0.13}s`,
-                              }} />
-                              <span className="prayer-candle-wick" />
-                              <span className="prayer-candle-wax" />
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <MeltingCandles times={prayer.candle_lit_at ?? []} now={now} />
                       <p className="mt-3 text-sm text-cyan-200">{prayer.is_public ? 'Public — visible on the Prayer Wall' : 'Secret — visible only to you'}</p>
                       <div className="mt-3 flex flex-wrap gap-2" aria-busy={!!savingVisibility[prayer.id]}>
                         <button type="button" onClick={() => setPrayerVisibility(prayer, true)}

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { activeCandleTimes } from '@/lib/candle-lifetime';
 import { supabase } from '@/lib/supabase';
 
 type PrayerWallItem = {
+  candle_lit_at: string[];
   id: string;
   profile_id: string;
   username: string;
@@ -19,6 +21,11 @@ function formatDate(dateString: string) {
 }
 
 export default function PrayerWallPage() {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [prayers, setPrayers] = useState<PrayerWallItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [holyPlaceHref, setHolyPlaceHref] = useState<string | null>(null);
@@ -35,7 +42,7 @@ export default function PrayerWallPage() {
   const loadPrayers = useCallback(async () => {
     const { data, error } = await supabase
       .from('altar_prayers')
-      .select('id, profile_id, username, altar_slug, prayer_text, created_at, candle_count')
+      .select('id, profile_id, username, altar_slug, prayer_text, created_at, candle_count, candle_lit_at')
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .limit(100);
@@ -170,7 +177,7 @@ export default function PrayerWallPage() {
                     Pilgrim: {prayer.username}
                   </p>
                   <p className="text-sm text-amber-100">
-                    Candles Lighted: <strong>{prayer.candle_count ?? 0}</strong>
+                    Candles Lighted: <strong>{activeCandleTimes(prayer.candle_lit_at, now).length}</strong>
                   </p>
                 </div>
                 <p className="text-xs uppercase tracking-wide text-white/50">
