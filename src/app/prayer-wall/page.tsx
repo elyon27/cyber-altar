@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { activeCandleTimes } from '@/lib/candle-lifetime';
+import MeltingCandles from '@/components/cyber-altar/MeltingCandles';
 import { supabase } from '@/lib/supabase';
 
 type PrayerWallItem = {
@@ -188,6 +189,8 @@ export default function PrayerWallPage() {
               <p className="mt-3 whitespace-pre-wrap text-white/90">
                 {prayer.prayer_text}
               </p>
+
+              <MeltingCandles times={prayer.candle_lit_at ?? []} now={now} />
 
               <p className="mt-4 text-xs text-white/50">
                 {formatDate(prayer.created_at)}
