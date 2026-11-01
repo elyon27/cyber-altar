@@ -2,9 +2,11 @@
 
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 export default function VerifiedPilgrimGate({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [email, setEmail] = useState('');
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -65,6 +67,7 @@ export default function VerifiedPilgrimGate({ children }: { children: ReactNode 
         <button disabled={busy || !token.trim()} className="rounded-xl bg-amber-500 px-4 py-3 font-semibold text-slate-950 disabled:opacity-50">Verify and Continue</button>
       </form>}
       <p role="status" className="mt-3 text-sm text-amber-200">{message}</p>
+      <Link href={`/sign-in?next=${encodeURIComponent(pathname)}`} className="mt-5 block rounded-xl border border-amber-300/40 px-4 py-3 text-center text-amber-100">Sign In With Password</Link>
       <Link href="/" className="mt-5 block underline">Back to Entrance</Link>
     </section>
   </main>;

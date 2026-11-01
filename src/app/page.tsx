@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { FormEvent, useRef, useState } from 'react';
 
 type Stage = 'email' | 'new' | 'returning' | 'rename';
@@ -101,6 +102,7 @@ export default function CyberAltarIntro() {
           </button>
         </form>
         <div className="mt-6 space-y-6">
+          <Link href="/sign-in" className="block w-full rounded-xl border border-amber-300/50 py-3 text-center font-semibold text-amber-100 hover:bg-white/10">Sign In With Password</Link>
           <p className="text-center text-xs text-white/60">or observe the prayers offered by pilgrims around the world</p>
           <button type="button" onClick={() => router.push('/prayer-wall')} className="w-full rounded-xl bg-cyan-500 py-3 font-semibold text-white transition hover:bg-cyan-400">View Public Prayer Wall</button>
           <a href="https://crownmind.netlify.app/" className="block w-full rounded-xl border border-white/30 py-3 text-center text-white transition hover:bg-white/10">Return To CrownMind</a>
