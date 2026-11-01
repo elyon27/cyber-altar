@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { activeCandleTimes } from '@/lib/candle-lifetime';
 import MeltingCandles from '@/components/cyber-altar/MeltingCandles';
 import VerifiedPilgrimGate from '@/components/cyber-altar/VerifiedPilgrimGate';
+import PilgrimsDirectory from '@/components/cyber-altar/PilgrimsDirectory';
 
 type AltarProfile = {
   id: string;
@@ -658,6 +659,8 @@ function HolyPlaceContent() {
             >
               Main Introduction
             </Link>
+
+            <PilgrimsDirectory />
 
             <Link
               href="https://crownmind.netlify.app"
