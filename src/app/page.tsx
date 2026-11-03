@@ -4,12 +4,16 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FormEvent, useRef, useState } from 'react';
 
+import { supabase } from '@/lib/supabase';
+
 type Stage = 'email' | 'new' | 'returning' | 'rename';
 
 export default function CyberAltarIntro() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [notice, setNotice] = useState('');
   const [savedName, setSavedName] = useState('');
   const [stage, setStage] = useState<Stage>('email');
   const [busy, setBusy] = useState(false);
@@ -23,10 +27,29 @@ export default function CyberAltarIntro() {
     inFlight.current = true;
     setBusy(true);
     setError('');
-    const action = stage === 'email' ? 'lookup' : stage === 'new' ? 'register' : stage === 'rename' ? 'rename' : 'continue';
+    setNotice('');
+    const action = stage === 'email' ? 'lookup' : stage === 'rename' ? 'rename' : 'continue';
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
+      if (stage === 'new') {
+        if (!name.trim() || name.trim().length > 80) throw new Error('Enter a Pilgrim Name of 1 to 80 characters.');
+        if (password.length < 8 || new TextEncoder().encode(password).length > 72) {
+          throw new Error('Choose a password of at least 8 characters and at most 72 bytes.');
+        }
+        const { error: signupError } = await supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: {
+            data: { cyber_altar_pilgrim_name: name.trim() },
+            emailRedirectTo: new URL('/sign-in', window.location.origin).href,
+          },
+        });
+        if (signupError) throw new Error(signupError.message);
+        setPassword('');
+        setNotice('Check your email for a confirmation link, then use Sign In With Password to enter.');
+        return;
+      }
       const response = await fetch('/api/pilgrim', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         cache: 'no-store', signal: controller.signal,
@@ -73,7 +96,7 @@ export default function CyberAltarIntro() {
               onChange={(event) => { setEmail(event.target.value); setError(''); }}
               placeholder="Enter your email" className={inputClass} />
             {stage !== 'email' && <button type="button" disabled={busy}
-              onClick={() => { setStage('email'); setName(''); setSavedName(''); setError(''); }}
+              onClick={() => { setStage('email'); setName(''); setSavedName(''); setPassword(''); setNotice(''); setError(''); }}
               className="mt-2 text-sm text-white underline disabled:opacity-50">Use a different email address</button>}
           </div>
 
@@ -95,10 +118,17 @@ export default function CyberAltarIntro() {
               className="mt-2 text-sm text-white underline">Cancel name change</button>}
           </div>}
 
+          {stage === 'new' && <div>
+            <label htmlFor="pilgrim-password" className="text-sm text-white/80">New Password</label>
+            <input id="pilgrim-password" type="password" autoComplete="new-password" required minLength={8}
+              maxLength={72} value={password} disabled={busy} onChange={event => setPassword(event.target.value)}
+              className={inputClass} />
+          </div>}
+          {notice && <p role="status" className="text-sm text-white">{notice}</p>}
           {error && <p role="alert" className="rounded-xl border border-red-200/40 bg-red-950/40 p-3 text-sm text-white">{error}</p>}
-          <button type="submit" disabled={busy || (stage !== 'email' && !name.trim())}
+          <button type="submit" disabled={busy || (stage === 'new' && (!password || !!notice)) || (stage !== 'email' && !name.trim())}
             className="w-full rounded-xl bg-amber-500 py-4 text-lg font-semibold text-black transition hover:bg-amber-400 disabled:cursor-wait disabled:opacity-60">
-            {busy ? stage === 'email' ? 'Checking email...' : 'Saving your details...' : stage === 'email' ? 'Check Email Address' : stage === 'rename' ? 'Save Name and Enter the Holy Place' : 'Enter the Holy Place'}
+            {busy ? stage === 'email' ? 'Checking email...' : 'Saving your details...' : stage === 'email' ? 'Check Email Address' : stage === 'new' ? 'Create Account' : stage === 'rename' ? 'Save Name and Enter the Holy Place' : 'Enter the Holy Place'}
           </button>
         </form>
         <div className="mt-6 space-y-6">
