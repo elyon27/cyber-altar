@@ -243,7 +243,7 @@ function HolyPlaceContent() {
   const [prayerText, setPrayerText] = useState('');
   const [prayerIndex, setPrayerIndex] = useState(0);
   const orderedPrayers = useMemo(() => [...prayers].sort((a, b) =>
-    a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id)), [prayers]);
+    b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id)), [prayers]);
   const currentPrayerIndex = Math.min(prayerIndex, Math.max(0, orderedPrayers.length - 1));
 
   const [savingVisibility, setSavingVisibility] = useState<Record<string, boolean>>({});
@@ -531,6 +531,7 @@ function HolyPlaceContent() {
 
       setPrayerText('');
       await loadPrayers(profile.id);
+      setPrayerIndex(0);
 
       if (typeof window !== 'undefined') {
         const ownerKey = getOwnerKey(profile.username);
