@@ -16,6 +16,81 @@ type Props = {
   previousAltars?: PreviousAltarItem[];
 };
 
+function AltarDedication({ slug }: { slug: string }) {
+  const [storageKey, setStorageKey] = useState('');
+  const [saved, setSaved] = useState('');
+  const [draft, setDraft] = useState('');
+  const [editing, setEditing] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    try {
+      const email = localStorage.getItem('cyber_altar_email')?.trim().toLowerCase();
+      if (!email) {
+        setError('Enter your email at the Cyber-Altar entrance to save a dedication.');
+        return;
+      }
+      const key = JSON.stringify(['cyber_altar_dedication', email, slug]);
+      const value = localStorage.getItem(key) ?? '';
+      setStorageKey(key);
+      setSaved(value);
+      setDraft(value);
+      setEditing(!value);
+    } catch {
+      setError('Dedications are unavailable in this browser.');
+    }
+  }, [slug]);
+
+  function save() {
+    const value = draft.trim();
+    if (!storageKey || !value) return;
+    try {
+      localStorage.setItem(storageKey, value);
+      setSaved(value);
+      setEditing(false);
+      setError('');
+    } catch {
+      setError('Unable to save the dedication in this browser.');
+    }
+  }
+
+  const buttonClass = 'rounded-xl border border-amber-300/50 px-4 py-2 text-amber-100 hover:bg-amber-400/20 disabled:opacity-50';
+  return (
+    <div className="border-b border-white/10 px-4 py-4 md:px-5">
+      {editing ? (
+        <>
+          <label htmlFor="altar-dedication" className="font-semibold text-amber-100">This altar is dedicated to:</label>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <input id="altar-dedication" value={draft} maxLength={200} disabled={!storageKey}
+              onChange={event => setDraft(event.target.value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter') { event.preventDefault(); save(); }
+              }}
+              className="min-w-0 flex-1 rounded-xl border border-white/20 bg-slate-900 px-3 py-2 text-white" />
+            <button type="button" className={buttonClass} disabled={!storageKey || !draft.trim()} onClick={save}>Save</button>
+            {saved && <button type="button" className={buttonClass} onClick={() => {
+              setDraft(saved);
+              setError('');
+              setEditing(false);
+            }}>Cancel</button>}
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="min-w-0 break-words text-white"><strong className="text-amber-100">This altar is dedicated to:</strong> {saved}</p>
+          <button type="button" className={buttonClass} aria-label="Edit altar dedication" title="Edit altar dedication"
+            onClick={() => setEditing(true)}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m15 5 4 4M4 20l4-.8L20 7l-3-3L5 16z" />
+            </svg>
+          </button>
+        </div>
+      )}
+      {error && <p role="alert" className="mt-2 text-sm text-red-200">{error}</p>}
+    </div>
+  );
+}
+
 const TOTAL_ALTARS = 72;
 
 function buildAltarList() {
@@ -532,6 +607,8 @@ export default function AltarSelectionForm({
                   )}
                 </div>
               </div>
+
+              <AltarDedication key={JSON.stringify([username, selectedAltar.altar_slug])} slug={selectedAltar.altar_slug} />
 
               <div className="bg-black/20 p-4 md:p-5">
                 <div className="overflow-hidden rounded-2xl border border-white/10">
