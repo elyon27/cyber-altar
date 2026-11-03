@@ -730,6 +730,9 @@ function HolyPlaceContent() {
             >
               View Prayer Wall
             </Link>
+            <div className="mt-4">
+              <MeltingCandles times={prayers.flatMap(prayer => prayer.candle_lit_at ?? [])} now={now} />
+            </div>
           </section>
 
           <aside className="min-w-0 space-y-6">
