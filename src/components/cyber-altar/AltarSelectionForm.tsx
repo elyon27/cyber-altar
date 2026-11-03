@@ -46,6 +46,7 @@ function AltarDedication({ slug }: { slug: string }) {
     if (!storageKey || !value) return;
     try {
       localStorage.setItem(storageKey, value);
+      window.dispatchEvent(new Event('altar-dedication-saved'));
       setSaved(value);
       setEditing(false);
       setError('');
