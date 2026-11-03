@@ -52,6 +52,29 @@ export default function PreviousAltarList({
     });
   }, [safePreviousAltars]);
 
+  const [dedications, setDedications] = useState<Record<string, string>>({});
+  const dedicationSlugs = uniqueAltars.map(item => normalizeSlug(item.altar_slug)).join(',');
+
+  useEffect(() => {
+    function loadDedications() {
+      try {
+        const email = localStorage.getItem('cyber_altar_email')?.trim().toLowerCase();
+        setDedications(email && dedicationSlugs ? Object.fromEntries(dedicationSlugs.split(',').map(slug => [
+          slug, localStorage.getItem(JSON.stringify(['cyber_altar_dedication', email, slug])) ?? '',
+        ])) : {});
+      } catch {
+        setDedications({});
+      }
+    }
+    loadDedications();
+    window.addEventListener('altar-dedication-saved', loadDedications);
+    window.addEventListener('storage', loadDedications);
+    return () => {
+      window.removeEventListener('altar-dedication-saved', loadDedications);
+      window.removeEventListener('storage', loadDedications);
+    };
+  }, [dedicationSlugs, username]);
+
   // Depend on the actual slugs, not a new history-array reference on each refresh.
   const altarSlugKey = [...new Set(uniqueAltars.map(item => normalizeSlug(item.altar_slug)))].sort().join(',');
 
@@ -181,8 +204,9 @@ export default function PreviousAltarList({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="text-[1rem] font-semibold uppercase">
+                    <div className="flex flex-wrap items-baseline gap-x-2 text-[1rem] font-semibold">
                       {slug.toUpperCase()}
+                      {dedications[slug] && <span className="min-w-0 break-words text-sm font-normal text-amber-100">{dedications[slug]}</span>}
                     </div>
 
                     <div className="mt-1 text-sm text-slate-300">
