@@ -228,6 +228,28 @@ function HolyPlaceContent() {
 
   const altarSlug = typeof params?.slug === 'string' ? normalizeSlug(params.slug) : '';
   const [username, setUsername] = useState('');
+  const [altarDedication, setAltarDedication] = useState('');
+
+  useEffect(() => {
+    function loadDedication() {
+      try {
+        const email = localStorage.getItem('cyber_altar_email')?.trim().toLowerCase();
+        const key = JSON.stringify(['cyber_altar_dedication', email, altarSlug]);
+        setAltarDedication(email && altarSlug ? localStorage.getItem(key) ?? '' : '');
+      } catch {
+        setAltarDedication('');
+      }
+    }
+
+    loadDedication();
+    window.addEventListener('altar-dedication-saved', loadDedication);
+    window.addEventListener('storage', loadDedication);
+    return () => {
+      window.removeEventListener('altar-dedication-saved', loadDedication);
+      window.removeEventListener('storage', loadDedication);
+    };
+  }, [altarSlug]);
+
   const [email, setEmail] = useState('');
   const [profile, setProfile] = useState<AltarProfile | null>(null);
   const [prayers, setPrayers] = useState<AltarPrayer[]>([]);
@@ -643,6 +665,9 @@ function HolyPlaceContent() {
             </div>
             <p className="mt-3 text-white/75">Pilgrim: {username}</p>
             <p className="text-white/60">Selected Altar: {altarSlug.toUpperCase()}</p>
+            {altarDedication && (
+              <p className="break-words text-white/60">Altar Is Dedicated To: {altarDedication}</p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-3">
