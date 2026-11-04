@@ -159,7 +159,7 @@ function setStoredCandleCount(ownerKey: string, altarSlug: string, value: number
   localStorage.setItem(storageKey, JSON.stringify(counts));
 }
 
-function updateStoredPrayerCount(ownerKey: string, altarSlug: string, increment = 1) {
+function setStoredPrayerCount(ownerKey: string, altarSlug: string, count: number) {
   if (typeof window === 'undefined' || !ownerKey || !altarSlug) return;
 
   const storageKey = `cyber_altar_prayer_counts_${ownerKey}`;
@@ -172,7 +172,7 @@ function updateStoredPrayerCount(ownerKey: string, altarSlug: string, increment 
     counts = {};
   }
 
-  counts[altarSlug] = Number(counts[altarSlug] || 0) + increment;
+  counts[altarSlug] = count;
   localStorage.setItem(storageKey, JSON.stringify(counts));
 }
 
@@ -269,6 +269,7 @@ function HolyPlaceContent() {
   const currentPrayerIndex = Math.min(prayerIndex, Math.max(0, orderedPrayers.length - 1));
 
   const [savingVisibility, setSavingVisibility] = useState<Record<string, boolean>>({});
+  const [deletingPrayerId, setDeletingPrayerId] = useState<string | null>(null);
   const [visibilityMessage, setVisibilityMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [submittingPrayer, setSubmittingPrayer] = useState(false);
@@ -301,7 +302,9 @@ function HolyPlaceContent() {
       throw new Error(error.message);
     }
 
-    setPrayers((data ?? []) as AltarPrayer[]);
+    const loadedPrayers = (data ?? []) as AltarPrayer[];
+    setPrayers(loadedPrayers);
+    return loadedPrayers;
   }, []);
 
   useEffect(() => {
@@ -510,7 +513,7 @@ function HolyPlaceContent() {
   ]);
 
   const setPrayerVisibility = async (prayer: AltarPrayer, isPublic: boolean) => {
-    if (savingVisibility[prayer.id]) return;
+    if (savingVisibility[prayer.id] || deletingPrayerId) return;
     setSavingVisibility(current => ({ ...current, [prayer.id]: true }));
     setVisibilityMessage('');
     try {
@@ -527,10 +530,44 @@ function HolyPlaceContent() {
     }
   };
 
+  const handleDeletePrayer = async (prayer: AltarPrayer) => {
+    if (!profile || prayer.profile_id !== profile.id || deletingPrayerId ||
+      savingVisibility[prayer.id] || lightingPrayerId || submittingPrayer) return;
+    if (!window.confirm('Permanently delete this prayer and its candles? If public, it will also be removed from the Prayer Wall.')) return;
+
+    setDeletingPrayerId(prayer.id);
+    setVisibilityMessage('');
+    try {
+      const { data, error } = await supabase.rpc('delete_owned_prayer', {
+        p_prayer_id: prayer.id,
+        p_profile_id: profile.id,
+      });
+      if (error || !data) throw error || new Error('No deletion confirmation received.');
+
+      setPrayers(current => current.filter(item => item.id !== prayer.id));
+      setPrayerIndex(current => Math.min(current, Math.max(0, orderedPrayers.length - 2)));
+      setProfile(current => current?.id === profile.id ? { ...current, candle_count: data.candle_count } : current);
+      setVisibilityMessage('Prayer deleted.');
+      try {
+        const ownerKey = getOwnerKey(profile.username);
+        setStoredPrayerCount(ownerKey, profile.altar_slug, data.prayer_count);
+        setStoredCandleCount(ownerKey, profile.altar_slug, data.candle_count);
+        localStorage.setItem(getCandleStorageKey(profile.username, profile.altar_slug), String(data.candle_count));
+      } catch (storageError) {
+        console.error('Unable to refresh cached altar totals:', storageError);
+      }
+    } catch (error) {
+      console.error(error);
+      setVisibilityMessage('Could not confirm deletion. Refresh the page before trying again.');
+    } finally {
+      setDeletingPrayerId(null);
+    }
+  };
+
   const handleSubmitPrayer = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!profile) return;
+    if (!profile || deletingPrayerId) return;
 
     const trimmedPrayer = prayerText.trim();
     if (!trimmedPrayer) return;
@@ -552,12 +589,12 @@ function HolyPlaceContent() {
       }
 
       setPrayerText('');
-      await loadPrayers(profile.id);
+      const loadedPrayers = await loadPrayers(profile.id);
       setPrayerIndex(0);
 
       if (typeof window !== 'undefined') {
         const ownerKey = getOwnerKey(profile.username);
-        updateStoredPrayerCount(ownerKey, profile.altar_slug, 1);
+        setStoredPrayerCount(ownerKey, profile.altar_slug, loadedPrayers.length);
         writeAltarHistory(profile.username, profile.altar_slug);
       }
     } catch (error) {
@@ -569,7 +606,7 @@ function HolyPlaceContent() {
   };
 
   const handleLightCandle = async (prayer: AltarPrayer) => {
-    if (!profile || prayer.profile_id !== profile.id || candleRequestPending.current) return;
+    if (!profile || prayer.profile_id !== profile.id || candleRequestPending.current || deletingPrayerId) return;
     candleRequestPending.current = true;
     setLightingPrayerId(prayer.id);
     setErrorMessage('');
@@ -778,7 +815,7 @@ function HolyPlaceContent() {
 
                 <button
                   type="submit"
-                  disabled={submittingPrayer || !prayerText.trim()}
+                  disabled={!!deletingPrayerId || submittingPrayer || !prayerText.trim()}
                   className="rounded-xl border border-cyan-400/40 bg-cyan-400/20 px-5 py-3 font-semibold text-cyan-100 transition hover:bg-cyan-400/30 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submittingPrayer ? 'Offering Prayer...' : 'Offer Prayer'}
@@ -807,7 +844,7 @@ function HolyPlaceContent() {
                       <p className="mt-3 text-xs text-white/50">{formatDate(prayer.created_at)}</p>
                       <div className="mt-3 flex flex-wrap items-center gap-3">
                         <button type="button" onClick={() => handleLightCandle(prayer)}
-                          disabled={lightingPrayerId !== null || !profile}
+                          disabled={lightingPrayerId !== null || !profile || !!deletingPrayerId}
                           aria-label="Light a candle for this prayer"
                           className="rounded-xl border border-amber-400/40 bg-amber-400/20 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60">
                           {lightingPrayerId === prayer.id ? 'Lighting Candle...' : 'Light Candle'}
@@ -820,13 +857,18 @@ function HolyPlaceContent() {
                       <p className="mt-3 text-sm text-cyan-200">{prayer.is_public ? 'Public — visible on the Prayer Wall' : 'Secret — visible only to you'}</p>
                       <div className="mt-3 flex flex-wrap gap-2" aria-busy={!!savingVisibility[prayer.id]}>
                         <button type="button" onClick={() => setPrayerVisibility(prayer, true)}
-                          disabled={!!savingVisibility[prayer.id] || prayer.is_public}
+                          disabled={!!savingVisibility[prayer.id] || prayer.is_public || !!deletingPrayerId}
                           className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Paste Prayer On Wall</button>
                         <button type="button" onClick={() => setPrayerVisibility(prayer, false)}
-                          disabled={!!savingVisibility[prayer.id] || !prayer.is_public}
+                          disabled={!!savingVisibility[prayer.id] || !prayer.is_public || !!deletingPrayerId}
                           className="rounded-xl border border-amber-300/60 px-4 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50">Keep Prayer Secret</button>
                         {savingVisibility[prayer.id] && <span className="self-center text-sm text-white/70">Saving...</span>}
                       </div>
+                      <button type="button" onClick={() => handleDeletePrayer(prayer)}
+                        disabled={!!deletingPrayerId || !!savingVisibility[prayer.id] || !!lightingPrayerId || submittingPrayer}
+                        className="mt-3 rounded-xl border border-red-400/60 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/15 disabled:opacity-50">
+                        {deletingPrayerId === prayer.id ? 'Deleting Prayer...' : 'Delete Prayer'}
+                      </button>
                     </article>
                   ))
                 )}
