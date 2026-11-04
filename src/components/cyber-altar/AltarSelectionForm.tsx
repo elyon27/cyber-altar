@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { loadDedications, readLocalDedications, saveDedication } from '@/lib/altar-dedications';
 import PreviousAltarList from './PreviousAltarList';
 
 type PreviousAltarItem = {
@@ -17,41 +18,45 @@ type Props = {
 };
 
 function AltarDedication({ slug }: { slug: string }) {
-  const [storageKey, setStorageKey] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState('');
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    try {
-      const email = localStorage.getItem('cyber_altar_email')?.trim().toLowerCase();
-      if (!email) {
-        setError('Enter your email at the Cyber-Altar entrance to save a dedication.');
-        return;
-      }
-      const key = JSON.stringify(['cyber_altar_dedication', email, slug]);
-      const value = localStorage.getItem(key) ?? '';
-      setStorageKey(key);
+    let active = true;
+    const local = readLocalDedications([slug])[slug] ?? '';
+    loadDedications([slug]).then(rows => {
+      if (!active) return;
+      const value = rows[slug] ?? '';
       setSaved(value);
       setDraft(value);
       setEditing(!value);
-    } catch {
-      setError('Dedications are unavailable in this browser.');
-    }
+    }).catch(() => {
+      if (!active) return;
+      setSaved(local);
+      setDraft(local);
+      setEditing(!local);
+      setError('Could not sync the dedication. Verify your email and try again.');
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [slug]);
 
-  function save() {
+  async function save() {
     const value = draft.trim();
-    if (!storageKey || !value) return;
+    if (loading || saving || !value) return;
+    setSaving(true);
+    setError('');
     try {
-      localStorage.setItem(storageKey, value);
-      window.dispatchEvent(new Event('altar-dedication-saved'));
+      await saveDedication(slug, value);
       setSaved(value);
       setEditing(false);
-      setError('');
     } catch {
-      setError('Unable to save the dedication in this browser.');
+      setError('Unable to save the dedication. Verify your email and try again.');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -62,13 +67,13 @@ function AltarDedication({ slug }: { slug: string }) {
         <>
           <label htmlFor="altar-dedication" className="font-semibold text-amber-100">This altar is dedicated to:</label>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <input id="altar-dedication" value={draft} maxLength={200} disabled={!storageKey}
+            <input id="altar-dedication" value={draft} maxLength={200} disabled={loading || saving}
               onChange={event => setDraft(event.target.value)}
               onKeyDown={event => {
                 if (event.key === 'Enter') { event.preventDefault(); save(); }
               }}
               className="min-w-0 flex-1 rounded-xl border border-white/20 bg-slate-900 px-3 py-2 text-white" />
-            <button type="button" className={buttonClass} disabled={!storageKey || !draft.trim()} onClick={save}>Save</button>
+            <button type="button" className={buttonClass} disabled={loading || saving || !draft.trim()} onClick={save}>Save</button>
             {saved && <button type="button" className={buttonClass} onClick={() => {
               setDraft(saved);
               setError('');
