@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 're
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { loadDedications, readLocalDedications } from '@/lib/altar-dedications';
 import { supabase } from '@/lib/supabase';
 import { activeCandleTimes } from '@/lib/candle-lifetime';
 import MeltingCandles from '@/components/cyber-altar/MeltingCandles';
@@ -231,22 +232,22 @@ function HolyPlaceContent() {
   const [altarDedication, setAltarDedication] = useState('');
 
   useEffect(() => {
-    function loadDedication() {
-      try {
-        const email = localStorage.getItem('cyber_altar_email')?.trim().toLowerCase();
-        const key = JSON.stringify(['cyber_altar_dedication', email, altarSlug]);
-        setAltarDedication(email && altarSlug ? localStorage.getItem(key) ?? '' : '');
-      } catch {
-        setAltarDedication('');
-      }
+    let generation = 0;
+    function refresh() {
+      const request = ++generation;
+      setAltarDedication(readLocalDedications([altarSlug])[altarSlug] ?? '');
+      if (!altarSlug) return;
+      void loadDedications([altarSlug]).then(rows => {
+        if (request === generation) setAltarDedication(rows[altarSlug] ?? '');
+      }).catch(() => { /* Keep any dedication available on this device. */ });
     }
-
-    loadDedication();
-    window.addEventListener('altar-dedication-saved', loadDedication);
-    window.addEventListener('storage', loadDedication);
+    refresh();
+    window.addEventListener('altar-dedication-saved', refresh);
+    window.addEventListener('storage', refresh);
     return () => {
-      window.removeEventListener('altar-dedication-saved', loadDedication);
-      window.removeEventListener('storage', loadDedication);
+      generation++;
+      window.removeEventListener('altar-dedication-saved', refresh);
+      window.removeEventListener('storage', refresh);
     };
   }, [altarSlug]);
 

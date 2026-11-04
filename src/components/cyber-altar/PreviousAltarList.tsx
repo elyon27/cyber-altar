@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { loadDedications, readLocalDedications } from '@/lib/altar-dedications';
 import { supabase } from '@/lib/supabase';
 
 type PreviousAltarItem = {
@@ -56,22 +57,22 @@ export default function PreviousAltarList({
   const dedicationSlugs = uniqueAltars.map(item => normalizeSlug(item.altar_slug)).join(',');
 
   useEffect(() => {
-    function loadDedications() {
-      try {
-        const email = localStorage.getItem('cyber_altar_email')?.trim().toLowerCase();
-        setDedications(email && dedicationSlugs ? Object.fromEntries(dedicationSlugs.split(',').map(slug => [
-          slug, localStorage.getItem(JSON.stringify(['cyber_altar_dedication', email, slug])) ?? '',
-        ])) : {});
-      } catch {
-        setDedications({});
-      }
+    let generation = 0;
+    const slugs = dedicationSlugs ? dedicationSlugs.split(',') : [];
+    function refresh() {
+      const request = ++generation;
+      setDedications(readLocalDedications(slugs));
+      void loadDedications(slugs).then(rows => {
+        if (request === generation) setDedications(rows);
+      }).catch(() => { /* Keep any dedication available on this device. */ });
     }
-    loadDedications();
-    window.addEventListener('altar-dedication-saved', loadDedications);
-    window.addEventListener('storage', loadDedications);
+    refresh();
+    window.addEventListener('altar-dedication-saved', refresh);
+    window.addEventListener('storage', refresh);
     return () => {
-      window.removeEventListener('altar-dedication-saved', loadDedications);
-      window.removeEventListener('storage', loadDedications);
+      generation++;
+      window.removeEventListener('altar-dedication-saved', refresh);
+      window.removeEventListener('storage', refresh);
     };
   }, [dedicationSlugs, username]);
 
