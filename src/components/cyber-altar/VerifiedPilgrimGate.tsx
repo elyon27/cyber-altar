@@ -68,6 +68,7 @@ export default function VerifiedPilgrimGate({ children }: { children: ReactNode 
       </form>}
       <p role="status" className="mt-3 text-sm text-amber-200">{message}</p>
       <Link href={`/sign-in?next=${encodeURIComponent(pathname)}`} className="mt-5 block rounded-xl border border-amber-300/40 px-4 py-3 text-center text-amber-100">Sign In With Password</Link>
+      <Link href={`/sign-in?reset=1&next=${encodeURIComponent(pathname)}`} className="mt-5 block text-center text-amber-100 underline">Forgot Password?</Link>
       <Link href="/" className="mt-5 block underline">Back to Entrance</Link>
     </section>
   </main>;
