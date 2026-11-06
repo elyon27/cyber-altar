@@ -10,6 +10,7 @@ import { activeCandleTimes } from '@/lib/candle-lifetime';
 import MeltingCandles from '@/components/cyber-altar/MeltingCandles';
 import VerifiedPilgrimGate from '@/components/cyber-altar/VerifiedPilgrimGate';
 import PilgrimsDirectory from '@/components/cyber-altar/PilgrimsDirectory';
+import SevenLayerInnerPrayer from '@/components/cyber-altar/SevenLayerInnerPrayer';
 
 type AltarProfile = {
   id: string;
@@ -264,6 +265,7 @@ function HolyPlaceContent() {
   }, []);
   const activeCandleCount = prayers.reduce((sum, prayer) => sum + activeCandleTimes(prayer.candle_lit_at, now).length, 0);
   const [prayerText, setPrayerText] = useState('');
+  const [innerPrayerId, setInnerPrayerId] = useState<string | null>(null);
   const [prayerIndex, setPrayerIndex] = useState(0);
   const orderedPrayers = useMemo(() => [...prayers].sort((a, b) =>
     b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id)), [prayers]);
@@ -546,6 +548,7 @@ function HolyPlaceContent() {
       if (error || !data) throw error || new Error('No deletion confirmation received.');
 
       setPrayers(current => current.filter(item => item.id !== prayer.id));
+      setInnerPrayerId(current => current === prayer.id ? null : current);
       setPrayerIndex(current => Math.min(current, Math.max(0, orderedPrayers.length - 2)));
       setProfile(current => current?.id === profile.id ? { ...current, candle_count: data.candle_count } : current);
       setVisibilityMessage('Prayer deleted.');
@@ -865,6 +868,10 @@ function HolyPlaceContent() {
                           className="rounded-xl border border-amber-300/60 px-4 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50">Keep Prayer Secret</button>
                         {savingVisibility[prayer.id] && <span className="self-center text-sm text-white/70">Saving...</span>}
                       </div>
+                      <button type="button" onClick={() => setInnerPrayerId(prayer.id)}
+                        className="mt-3 mr-2 rounded-xl border border-violet-300/60 bg-violet-400/10 px-4 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-400/20">
+                        7 Layer Inner Prayer
+                      </button>
                       <button type="button" onClick={() => handleDeletePrayer(prayer)}
                         disabled={!!deletingPrayerId || !!savingVisibility[prayer.id] || !!lightingPrayerId || submittingPrayer}
                         className="mt-3 rounded-xl border border-red-400/60 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/15 disabled:opacity-50">
@@ -895,6 +902,13 @@ function HolyPlaceContent() {
           </aside>
         </div>
       </div>
+      {innerPrayerId && orderedPrayers.some(prayer => prayer.id === innerPrayerId) && (
+        <SevenLayerInnerPrayer
+          key={innerPrayerId}
+          prayerText={orderedPrayers.find(prayer => prayer.id === innerPrayerId)!.prayer_text}
+          onClose={() => setInnerPrayerId(null)}
+        />
+      )}
     </main>
   );
 }
