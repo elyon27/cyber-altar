@@ -905,6 +905,7 @@ function HolyPlaceContent() {
       {innerPrayerId && orderedPrayers.some(prayer => prayer.id === innerPrayerId) && (
         <SevenLayerInnerPrayer
           key={innerPrayerId}
+          prayerId={innerPrayerId}
           prayerText={orderedPrayers.find(prayer => prayer.id === innerPrayerId)!.prayer_text}
           onClose={() => setInnerPrayerId(null)}
         />
