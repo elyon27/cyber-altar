@@ -11,6 +11,7 @@ import MeltingCandles from '@/components/cyber-altar/MeltingCandles';
 import VerifiedPilgrimGate from '@/components/cyber-altar/VerifiedPilgrimGate';
 import PilgrimsDirectory from '@/components/cyber-altar/PilgrimsDirectory';
 import SevenLayerInnerPrayer from '@/components/cyber-altar/SevenLayerInnerPrayer';
+import TransferPrayerControl from '@/components/cyber-altar/TransferPrayerControl';
 
 type AltarProfile = {
   id: string;
@@ -273,6 +274,7 @@ function HolyPlaceContent() {
 
   const [savingVisibility, setSavingVisibility] = useState<Record<string, boolean>>({});
   const [deletingPrayerId, setDeletingPrayerId] = useState<string | null>(null);
+  const [transferringPrayerId, setTransferringPrayerId] = useState<string | null>(null);
   const [visibilityMessage, setVisibilityMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [submittingPrayer, setSubmittingPrayer] = useState(false);
@@ -516,7 +518,7 @@ function HolyPlaceContent() {
   ]);
 
   const setPrayerVisibility = async (prayer: AltarPrayer, isPublic: boolean) => {
-    if (savingVisibility[prayer.id] || deletingPrayerId) return;
+    if (savingVisibility[prayer.id] || deletingPrayerId || transferringPrayerId) return;
     setSavingVisibility(current => ({ ...current, [prayer.id]: true }));
     setVisibilityMessage('');
     try {
@@ -534,7 +536,7 @@ function HolyPlaceContent() {
   };
 
   const handleDeletePrayer = async (prayer: AltarPrayer) => {
-    if (!profile || prayer.profile_id !== profile.id || deletingPrayerId ||
+    if (!profile || prayer.profile_id !== profile.id || deletingPrayerId || transferringPrayerId ||
       savingVisibility[prayer.id] || lightingPrayerId || submittingPrayer) return;
     if (!window.confirm('Permanently delete this prayer and its candles? If public, it will also be removed from the Prayer Wall.')) return;
 
@@ -568,10 +570,34 @@ function HolyPlaceContent() {
     }
   };
 
+  const handlePrayerTransferred = (result: {
+    source_altar: string;
+    target_altar: string;
+    source_prayer_count: number;
+    target_prayer_count: number;
+    source_candle_count: number;
+    target_candle_count: number;
+  }, prayerId: string) => {
+    setPrayers(current => current.filter(item => item.id !== prayerId));
+    setInnerPrayerId(current => current === prayerId ? null : current);
+    setPrayerIndex(index => Math.max(0, Math.min(index, orderedPrayers.length - 2)));
+    setProfile(current => current ? { ...current, candle_count: result.source_candle_count } : current);
+    setVisibilityMessage(`Prayer transferred to ${result.target_altar.toUpperCase()} with its candles, visibility and inner reflections.`);
+    if (profile) {
+      const owner = getOwnerKey(profile.username);
+      setStoredPrayerCount(owner, result.source_altar, result.source_prayer_count);
+      setStoredPrayerCount(owner, result.target_altar, result.target_prayer_count);
+      setStoredCandleCount(owner, result.source_altar, result.source_candle_count);
+      setStoredCandleCount(owner, result.target_altar, result.target_candle_count);
+      localStorage.setItem(getCandleStorageKey(profile.username, result.source_altar), String(result.source_candle_count));
+      localStorage.setItem(getCandleStorageKey(profile.username, result.target_altar), String(result.target_candle_count));
+    }
+  };
+
   const handleSubmitPrayer = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!profile || deletingPrayerId) return;
+    if (!profile || deletingPrayerId || transferringPrayerId) return;
 
     const trimmedPrayer = prayerText.trim();
     if (!trimmedPrayer) return;
@@ -610,7 +636,7 @@ function HolyPlaceContent() {
   };
 
   const handleLightCandle = async (prayer: AltarPrayer) => {
-    if (!profile || prayer.profile_id !== profile.id || candleRequestPending.current || deletingPrayerId) return;
+    if (!profile || prayer.profile_id !== profile.id || candleRequestPending.current || deletingPrayerId || transferringPrayerId) return;
     candleRequestPending.current = true;
     setLightingPrayerId(prayer.id);
     setErrorMessage('');
@@ -848,7 +874,7 @@ function HolyPlaceContent() {
                       <p className="mt-3 text-xs text-white/50">{formatDate(prayer.created_at)}</p>
                       <div className="mt-3 flex flex-wrap items-center gap-3">
                         <button type="button" onClick={() => handleLightCandle(prayer)}
-                          disabled={lightingPrayerId !== null || !profile || !!deletingPrayerId}
+                          disabled={lightingPrayerId !== null || !profile || !!deletingPrayerId || !!transferringPrayerId}
                           aria-label="Light a candle for this prayer"
                           className="rounded-xl border border-amber-400/40 bg-amber-400/20 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30 disabled:cursor-not-allowed disabled:opacity-60">
                           {lightingPrayerId === prayer.id ? 'Lighting Candle...' : 'Light Candle'}
@@ -861,10 +887,10 @@ function HolyPlaceContent() {
                       <p className="mt-3 text-sm text-cyan-200">{prayer.is_public ? 'Public — visible on the Prayer Wall' : 'Secret — visible only to you'}</p>
                       <div className="mt-3 flex flex-wrap gap-2" aria-busy={!!savingVisibility[prayer.id]}>
                         <button type="button" onClick={() => setPrayerVisibility(prayer, true)}
-                          disabled={!!savingVisibility[prayer.id] || prayer.is_public || !!deletingPrayerId}
+                          disabled={!!savingVisibility[prayer.id] || prayer.is_public || !!deletingPrayerId || !!transferringPrayerId}
                           className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Paste Prayer On Wall</button>
                         <button type="button" onClick={() => setPrayerVisibility(prayer, false)}
-                          disabled={!!savingVisibility[prayer.id] || !prayer.is_public || !!deletingPrayerId}
+                          disabled={!!savingVisibility[prayer.id] || !prayer.is_public || !!deletingPrayerId || !!transferringPrayerId}
                           className="rounded-xl border border-amber-300/60 px-4 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50">Keep Prayer Secret</button>
                         {savingVisibility[prayer.id] && <span className="self-center text-sm text-white/70">Saving...</span>}
                       </div>
@@ -872,8 +898,19 @@ function HolyPlaceContent() {
                         className="mt-3 mr-2 rounded-xl border border-violet-300/60 bg-violet-400/10 px-4 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-400/20">
                         7 Layer Inner Prayer
                       </button>
+                      {profile && (
+                        <TransferPrayerControl
+                          key={prayer.id}
+                          prayerId={prayer.id}
+                          sourceAltar={altarSlug}
+                          sourceProfileId={profile.id}
+                          ownerEmail={email}
+                          disabled={!!deletingPrayerId || !!transferringPrayerId || !!savingVisibility[prayer.id] || !!lightingPrayerId || submittingPrayer}
+                          onTransferred={result => handlePrayerTransferred(result, prayer.id)}
+                        />
+                      )}
                       <button type="button" onClick={() => handleDeletePrayer(prayer)}
-                        disabled={!!deletingPrayerId || !!savingVisibility[prayer.id] || !!lightingPrayerId || submittingPrayer}
+                        disabled={!!deletingPrayerId || !!transferringPrayerId || !!savingVisibility[prayer.id] || !!lightingPrayerId || submittingPrayer}
                         className="mt-3 rounded-xl border border-red-400/60 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/15 disabled:opacity-50">
                         {deletingPrayerId === prayer.id ? 'Deleting Prayer...' : 'Delete Prayer'}
                       </button>
