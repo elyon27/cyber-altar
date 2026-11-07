@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import VerifiedPilgrimGate from '@/components/cyber-altar/VerifiedPilgrimGate';
 import MeltingCandles from '@/components/cyber-altar/MeltingCandles';
+import SevenLayerInnerPrayer from '@/components/cyber-altar/SevenLayerInnerPrayer';
 import { supabase } from '@/lib/supabase';
 import { activeCandleTimes } from '@/lib/candle-lifetime';
 import { loadDedications, readLocalDedications } from '@/lib/altar-dedications';
@@ -36,6 +37,10 @@ function MyPrayersContent() {
   const [errorMessage, setErrorMessage] = useState('');
   const [now, setNow] = useState(() => Date.now());
   const [filter, setFilter] = useState('all');
+  const [innerPrayerId, setInnerPrayerId] = useState<string | null>(null);
+  const [reflectionCounts, setReflectionCounts] = useState<Record<string, number>>({});
+  const [reflectionCountsError, setReflectionCountsError] = useState('');
+
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -85,6 +90,34 @@ function MyPrayersContent() {
       setPrayers(allPrayers);
       setHistory(altarCodes);
       setDedications(names);
+
+      // Each prayer has at most seven reflection layers. Query in small batches
+      // to stay below Supabase's default 1,000-row API response limit.
+      setReflectionCounts({});
+      setReflectionCountsError('');
+      const counts: Record<string, number> = Object.fromEntries(allPrayers.map(prayer => [prayer.id, 0]));
+      try {
+        const ids = allPrayers.map(prayer => prayer.id);
+        for (let start = 0; start < ids.length; start += 100) {
+          const { data: rows, error: reflectionsError } = await supabase
+            .from('prayer_inner_reflections')
+            .select('prayer_id, layer_number, reflection_text')
+            .in('prayer_id', ids.slice(start, start + 100));
+          if (reflectionsError) throw reflectionsError;
+          const completed = new Map<string, Set<number>>();
+          for (const row of rows ?? []) {
+            if (!row.reflection_text?.trim()) continue;
+            const layers = completed.get(row.prayer_id) ?? new Set<number>();
+            layers.add(row.layer_number);
+            completed.set(row.prayer_id, layers);
+          }
+          for (const [prayerId, layers] of completed) counts[prayerId] = layers.size;
+        }
+        setReflectionCounts(counts);
+      } catch (reason) {
+        console.error('Unable to load reflection counts:', reason);
+        setReflectionCountsError('Saved reflection counts could not be loaded. Open a prayer to view its reflections.');
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to load your prayers.');
     } finally {
@@ -156,6 +189,7 @@ function MyPrayersContent() {
               </p>
             </div>
 
+            {reflectionCountsError && <p role="status" className="mt-4 text-sm text-amber-200">{reflectionCountsError}</p>}
             <div className="mt-6 space-y-4">
               {visiblePrayers.length === 0 ? (
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-white/70">
@@ -189,6 +223,17 @@ function MyPrayersContent() {
                         <MeltingCandles times={prayer.candle_lit_at ?? []} now={now} />
                       </div>
                     )}
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={() => setInnerPrayerId(prayer.id)}
+                        className="rounded-xl border border-violet-300/60 bg-violet-400/10 px-4 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-400/20">
+                        7 Layer Inner Prayer
+                      </button>
+                      <span role="status" aria-live="polite"
+                        aria-label={reflectionCounts[prayer.id] === undefined ? 'Loading saved reflection count' : `${reflectionCounts[prayer.id]} of 7 reflection layers saved`}
+                        className="rounded-xl border border-violet-300/30 bg-violet-400/10 px-3 py-2 text-sm font-semibold text-violet-100">
+                        {reflectionCounts[prayer.id] === undefined ? '…/7' : `${reflectionCounts[prayer.id]}/7`}
+                      </span>
+                    </div>
                   </article>
                 );
               })}
@@ -196,6 +241,17 @@ function MyPrayersContent() {
           </>
         )}
       </div>
+      {innerPrayerId && prayers.some(prayer => prayer.id === innerPrayerId) && (
+        <SevenLayerInnerPrayer
+          key={innerPrayerId}
+          prayerId={innerPrayerId}
+          prayerText={prayers.find(prayer => prayer.id === innerPrayerId)!.prayer_text}
+          onReflectionCountChange={count => setReflectionCounts(previous => ({
+            ...previous, [innerPrayerId]: count,
+          }))}
+          onClose={() => setInnerPrayerId(null)}
+        />
+      )}
     </main>
   );
 }
