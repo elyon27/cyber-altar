@@ -13,10 +13,10 @@ const LAYERS = [
   { title: 'Trust and Peace', guidance: 'Remain for a moment in quiet trust. Consider one loving action you can take after this prayer.' },
 ];
 
-type Props = { prayerId: string; prayerText: string; onClose: () => void };
+type Props = { prayerId: string; prayerText: string; onClose: () => void; onReflectionCountChange?: (count: number) => void };
 type ReflectionMap = Record<number, string>;
 
-export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose }: Props) {
+export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose, onReflectionCountChange }: Props) {
   const [layer, setLayer] = useState(0);
   const reflectionInputRef = useRef<HTMLTextAreaElement>(null);
   const [saved, setSaved] = useState<ReflectionMap>({});
@@ -50,6 +50,7 @@ export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose }:
         for (const item of data ?? []) next[item.layer_number] = item.reflection_text || '';
         setSaved(next);
         setDrafts(next);
+        onReflectionCountChange?.(Object.values(next).filter(text => text.trim()).length);
       }
       setLoading(false);
     }
@@ -110,7 +111,11 @@ export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose }:
         updated_at: new Date().toISOString(),
       }, { onConflict: 'prayer_id,layer_number' }).select('reflection_text').single();
       if (error || !data) throw error || new Error('Save was not confirmed.');
-      setSaved(previous => ({ ...previous, [layerNumber]: data.reflection_text }));
+      setSaved(previous => {
+        const updated = { ...previous, [layerNumber]: data.reflection_text };
+        onReflectionCountChange?.(Object.values(updated).filter(text => text.trim()).length);
+        return updated;
+      });
       setDrafts(previous => ({ ...previous, [layerNumber]: data.reflection_text }));
       setEditing(previous => ({ ...previous, [layerNumber]: false }));
       setSuccessMessage('Layer ' + layerNumber + ' reflection saved privately.');
