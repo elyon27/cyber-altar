@@ -74,14 +74,37 @@ function CandlesContent() {
   );
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-[#10172e] to-black px-4 py-8 text-white sm:px-6">
+    <main className="flex min-h-screen min-h-[100dvh] flex-col overflow-x-hidden bg-gradient-to-b from-[#080e22] via-[#10172e] to-black px-3 pt-[max(24px,env(safe-area-inset-top))] text-white sm:px-6">
+      <header aria-label="Crown above the prayer candles" className="flex shrink-0 justify-center pb-3 pt-3 sm:pb-6">
+        <svg viewBox="0 0 160 112" width="146" height="102" role="img" aria-label="Golden crown"
+          className="h-24 w-36 drop-shadow-[0_0_22px_rgba(251,191,36,0.32)] sm:h-28 sm:w-40"
+          fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="candleCrownGold" x1="24" y1="12" x2="135" y2="100" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#FFF3BA" />
+              <stop offset=".45" stopColor="#F7C75A" />
+              <stop offset="1" stopColor="#B8751B" />
+            </linearGradient>
+          </defs>
+          <path d="M19 38L43 61L79 13L115 61L141 38L131 88H29L19 38Z"
+            stroke="url(#candleCrownGold)" strokeWidth="5" strokeLinejoin="round"/>
+          <path d="M30 89H130V100H30V89Z" fill="url(#candleCrownGold)" stroke="#FFF1B4" strokeWidth="2"/>
+          <path d="M31 79H129" stroke="#FFE5A0" strokeWidth="3" strokeLinecap="round"/>
+          <circle cx="19" cy="36" r="7" fill="#F8CE68" stroke="#FFF4C4" strokeWidth="2"/>
+          <circle cx="79" cy="12" r="7" fill="#FFE6A2" stroke="#FFF4C4" strokeWidth="2"/>
+          <circle cx="141" cy="36" r="7" fill="#F8CE68" stroke="#FFF4C4" strokeWidth="2"/>
+          <path d="M79 43L86 55L79 68L72 55L79 43Z" fill="#A9D5E9" stroke="#FFF4C4" strokeWidth="2"/>
+          <path d="M47 65L52 72L47 79L42 72L47 65ZM111 65L116 72L111 79L106 72L111 65Z"
+            fill="#D66D75" stroke="#FFE5A0" strokeWidth="1.5"/>
+        </svg>
+      </header>
       {errorMessage ? (
         <p role="alert" className="mx-auto max-w-3xl rounded-xl border border-red-400/40 bg-red-400/10 p-4 text-red-100">{errorMessage}</p>
       ) : loading ? (
         <p role="status" className="sr-only">Loading your burning candles…</p>
       ) : (
         <section aria-label="All your active burning prayer candles"
-          className="mx-auto max-w-6xl [&_.prayer-candles]:max-h-none [&_.prayer-candles]:justify-center [&_.prayer-candles]:overflow-visible [&_.prayer-candles]:bg-transparent">
+          className="mx-auto flex w-full max-w-6xl flex-1 items-end justify-center pb-[max(24px,env(safe-area-inset-bottom))] [&_.prayer-candles]:w-full [&_.prayer-candles]:max-h-none [&_.prayer-candles]:justify-center [&_.prayer-candles]:overflow-visible [&_.prayer-candles]:bg-transparent">
           <MeltingCandles times={activeTimes} now={now} />
         </section>
       )}
