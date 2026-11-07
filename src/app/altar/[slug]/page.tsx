@@ -756,6 +756,13 @@ function HolyPlaceContent() {
             <PilgrimsDirectory />
 
             <Link
+              href="/my-prayers"
+              className="rounded-xl border border-white/20 px-4 py-3 font-medium hover:bg-white/10"
+            >
+              My Prayers
+            </Link>
+
+            <Link
               href="https://crownmind.netlify.app"
               className="rounded-xl bg-amber-500 px-4 py-3 font-semibold text-slate-950"
             >
