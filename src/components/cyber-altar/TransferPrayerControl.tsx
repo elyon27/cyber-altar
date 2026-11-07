@@ -93,7 +93,11 @@ export default function TransferPrayerControl({
       onTransferred(data);
       setExpanded(false);
     } catch (reason) {
-      setErrorMessage(reason instanceof Error ? reason.message : 'Transfer failed; the prayer has not been moved.');
+      const message = reason && typeof reason === 'object' && 'message' in reason
+        && typeof reason.message === 'string' ? reason.message : '';
+      setErrorMessage(message
+        ? `Transfer failed: ${message}. The prayer has not been moved.`
+        : 'Transfer failed; the prayer has not been moved. Please try again.');
     } finally {
       setTransferring(false);
     }
