@@ -111,11 +111,9 @@ export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose, o
         updated_at: new Date().toISOString(),
       }, { onConflict: 'prayer_id,layer_number' }).select('reflection_text').single();
       if (error || !data) throw error || new Error('Save was not confirmed.');
-      setSaved(previous => {
-        const updated = { ...previous, [layerNumber]: data.reflection_text };
-        onReflectionCountChange?.(Object.values(updated).filter(text => text.trim()).length);
-        return updated;
-      });
+      const updatedSaved = { ...saved, [layerNumber]: data.reflection_text };
+      setSaved(updatedSaved);
+      onReflectionCountChange?.(Object.values(updatedSaved).filter(text => text.trim()).length);
       setDrafts(previous => ({ ...previous, [layerNumber]: data.reflection_text }));
       setEditing(previous => ({ ...previous, [layerNumber]: false }));
       setSuccessMessage('Layer ' + layerNumber + ' reflection saved privately.');
