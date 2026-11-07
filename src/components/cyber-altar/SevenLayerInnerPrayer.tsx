@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const LAYERS = [
@@ -18,6 +18,7 @@ type ReflectionMap = Record<number, string>;
 
 export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose }: Props) {
   const [layer, setLayer] = useState(0);
+  const reflectionInputRef = useRef<HTMLTextAreaElement>(null);
   const [saved, setSaved] = useState<ReflectionMap>({});
   const [drafts, setDrafts] = useState<ReflectionMap>({});
   const [editing, setEditing] = useState<Record<number, boolean>>({});
@@ -79,6 +80,15 @@ export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose }:
   const isEditing = editing[layerNumber] || !hasSaved;
   const isDirty = currentDraft !== (currentSaved ?? '');
 
+  // Keep all typed or loaded lines visible without a nested text-area scroll.
+  useEffect(() => {
+    if (!isEditing || loading) return;
+    const field = reflectionInputRef.current;
+    if (!field) return;
+    field.style.height = 'auto';
+    field.style.height = `${Math.max(field.scrollHeight, 128)}px`;
+  }, [layer, currentDraft, isEditing, loading]);
+
   async function saveReflection() {
     if (saving || loading) return;
     setErrorMessage('');
@@ -121,7 +131,7 @@ export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose }:
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       onMouseDown={event => { if (event.target === event.currentTarget) close(); }}>
       <section role="dialog" aria-modal="true" aria-labelledby="inner-prayer-heading"
-        className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-amber-400/30 bg-slate-950 p-5 text-white shadow-2xl sm:p-7">
+        className="max-h-[calc(100dvh-24px)] w-full max-w-xl overflow-y-auto overscroll-contain rounded-3xl border border-amber-400/30 bg-slate-950 p-4 text-white shadow-2xl sm:max-h-[90vh] sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold tracking-wide text-amber-200">7 Layer Inner Prayer · Layer {layerNumber} of 7</p>
@@ -140,11 +150,18 @@ export default function SevenLayerInnerPrayer({ prayerId, prayerText, onClose }:
             <label htmlFor="short-reflection" className="font-semibold text-violet-100">Short Reflection</label>
             <span className="text-xs text-white/60">{currentDraft.length}/500 characters</span>
           </div>
-          <textarea id="short-reflection" rows={4} maxLength={500}
-            placeholder="Write your personal reflection on this layer's guidance..."
-            value={currentDraft} disabled={loading || saving || !isEditing}
-            onChange={event => { setDrafts(previous => ({ ...previous, [layerNumber]: event.target.value })); setSuccessMessage(''); }}
-            className="w-full resize-y rounded-xl border border-white/20 bg-slate-900 p-3 text-white placeholder:text-white/40 focus:border-violet-300 focus:outline-none disabled:opacity-75" />
+          {isEditing ? (
+            <textarea ref={reflectionInputRef} id="short-reflection" rows={4} maxLength={500}
+              placeholder="Write your personal reflection on this layer's guidance..."
+              value={currentDraft} disabled={loading || saving}
+              onChange={event => { setDrafts(previous => ({ ...previous, [layerNumber]: event.target.value })); setSuccessMessage(''); }}
+              className="block min-h-32 w-full resize-none overflow-hidden rounded-xl border border-white/20 bg-slate-900 p-3 text-base leading-7 text-white placeholder:text-white/40 focus:border-violet-300 focus:outline-none disabled:opacity-75" />
+          ) : (
+            <div id="short-reflection" role="region" aria-label="Saved Short Reflection"
+              className="w-full whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-xl border border-violet-300/20 bg-slate-900 p-3 text-base leading-7 text-white">
+              {currentSaved || 'No reflection saved yet.'}
+            </div>
+          )}
           <div className="mt-3 flex flex-wrap items-center gap-3">
             {isEditing ? (
               <button type="button" onClick={() => void saveReflection()} disabled={loading || saving || !currentDraft.trim()}
