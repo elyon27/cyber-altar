@@ -75,7 +75,7 @@ function CandlesContent() {
 
   return (
     <main className="flex min-h-screen min-h-[100dvh] flex-col overflow-x-hidden bg-gradient-to-b from-[#080e22] via-[#10172e] to-black px-3 pt-[max(24px,env(safe-area-inset-top))] text-white sm:px-6">
-      <header aria-label="Cross above the prayer candles" className="flex shrink-0 justify-center pb-3 pt-3 sm:pb-6">
+      <header aria-label="Cross above the prayer candles" className="flex shrink-0 justify-center pb-0 pt-3">
         <svg viewBox="0 0 160 150" width="146" height="136" role="img" aria-label="Illuminated golden Christian cross"
           className="h-28 w-36 drop-shadow-[0_0_22px_rgba(251,191,36,0.42)] sm:h-36 sm:w-40"
           fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -107,7 +107,7 @@ function CandlesContent() {
         <p role="status" className="sr-only">Loading your burning candles…</p>
       ) : (
         <section aria-label="All your active burning prayer candles"
-          className="mx-auto flex w-full max-w-6xl flex-1 items-end justify-center pb-[max(24px,env(safe-area-inset-bottom))] [&_.prayer-candles]:w-full [&_.prayer-candles]:max-h-none [&_.prayer-candles]:justify-center [&_.prayer-candles]:overflow-visible [&_.prayer-candles]:bg-transparent">
+          className="mx-auto flex w-full max-w-6xl shrink-0 items-start justify-center pb-[max(24px,env(safe-area-inset-bottom))] [&_.prayer-candles]:mt-1 [&_.prayer-candles]:w-full [&_.prayer-candles]:max-h-none [&_.prayer-candles]:justify-center [&_.prayer-candles]:overflow-visible [&_.prayer-candles]:bg-transparent">
           <MeltingCandles times={activeTimes} now={now} />
         </section>
       )}
