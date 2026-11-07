@@ -75,27 +75,30 @@ function CandlesContent() {
 
   return (
     <main className="flex min-h-screen min-h-[100dvh] flex-col overflow-x-hidden bg-gradient-to-b from-[#080e22] via-[#10172e] to-black px-3 pt-[max(24px,env(safe-area-inset-top))] text-white sm:px-6">
-      <header aria-label="Crown above the prayer candles" className="flex shrink-0 justify-center pb-3 pt-3 sm:pb-6">
-        <svg viewBox="0 0 160 112" width="146" height="102" role="img" aria-label="Golden crown"
-          className="h-24 w-36 drop-shadow-[0_0_22px_rgba(251,191,36,0.32)] sm:h-28 sm:w-40"
+      <header aria-label="Cross above the prayer candles" className="flex shrink-0 justify-center pb-3 pt-3 sm:pb-6">
+        <svg viewBox="0 0 160 150" width="146" height="136" role="img" aria-label="Illuminated golden Christian cross"
+          className="h-28 w-36 drop-shadow-[0_0_22px_rgba(251,191,36,0.42)] sm:h-36 sm:w-40"
           fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="candleCrownGold" x1="24" y1="12" x2="135" y2="100" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#FFF3BA" />
-              <stop offset=".45" stopColor="#F7C75A" />
-              <stop offset="1" stopColor="#B8751B" />
+            <linearGradient id="candleCrossGold" x1="53" y1="10" x2="106" y2="148" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#FFF9D5" />
+              <stop offset=".42" stopColor="#F6D477" />
+              <stop offset="1" stopColor="#AE6B1D" />
             </linearGradient>
+            <radialGradient id="candleCrossHalo" cx="0" cy="0" r="1"
+              gradientTransform="translate(80 69) rotate(90) scale(69 62)" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#FDE68A" stopOpacity=".32" />
+              <stop offset="1" stopColor="#FDE68A" stopOpacity="0" />
+            </radialGradient>
           </defs>
-          <path d="M19 38L43 61L79 13L115 61L141 38L131 88H29L19 38Z"
-            stroke="url(#candleCrownGold)" strokeWidth="5" strokeLinejoin="round"/>
-          <path d="M30 89H130V100H30V89Z" fill="url(#candleCrownGold)" stroke="#FFF1B4" strokeWidth="2"/>
-          <path d="M31 79H129" stroke="#FFE5A0" strokeWidth="3" strokeLinecap="round"/>
-          <circle cx="19" cy="36" r="7" fill="#F8CE68" stroke="#FFF4C4" strokeWidth="2"/>
-          <circle cx="79" cy="12" r="7" fill="#FFE6A2" stroke="#FFF4C4" strokeWidth="2"/>
-          <circle cx="141" cy="36" r="7" fill="#F8CE68" stroke="#FFF4C4" strokeWidth="2"/>
-          <path d="M79 43L86 55L79 68L72 55L79 43Z" fill="#A9D5E9" stroke="#FFF4C4" strokeWidth="2"/>
-          <path d="M47 65L52 72L47 79L42 72L47 65ZM111 65L116 72L111 79L106 72L111 65Z"
-            fill="#D66D75" stroke="#FFE5A0" strokeWidth="1.5"/>
+          <ellipse cx="80" cy="70" rx="63" ry="69" fill="url(#candleCrossHalo)" />
+          <path d="M68 12H92V48H132V72H92V140H68V72H28V48H68V12Z"
+            fill="url(#candleCrossGold)" stroke="#FFF2B5" strokeWidth="3" strokeLinejoin="round" />
+          <path d="M74 19H86V54H126V66H86V133H74V66H34V54H74V19Z"
+            stroke="#FFF9DF" strokeOpacity=".8" strokeWidth="1.6" strokeLinejoin="round" />
+          <circle cx="80" cy="60" r="5.5" fill="#FFF7D6" stroke="#C18B34" strokeWidth="1.5" />
+          <path d="M80 0V7M80 145V150M15 60H22M138 60H145"
+            stroke="#FDE7A6" strokeWidth="2" strokeLinecap="round" opacity=".7" />
         </svg>
       </header>
       {errorMessage ? (
