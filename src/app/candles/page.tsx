@@ -110,9 +110,10 @@ function CandlesContent() {
           className="mx-auto flex w-full max-w-6xl shrink-0 items-start justify-center pb-[max(24px,env(safe-area-inset-bottom))] [&_.prayer-candles]:mt-1 [&_.prayer-candles]:w-full [&_.prayer-candles]:max-h-none [&_.prayer-candles]:justify-center [&_.prayer-candles]:overflow-visible [&_.prayer-candles]:bg-transparent">
           <div className="w-full">
             <MeltingCandles times={activeTimes} now={now} />
-            <p lang="la" className="mt-6 px-3 pb-4 text-center font-serif text-sm italic tracking-wide text-amber-200/90 sm:text-base">
-              Pro intentionibus precum luci oblatarum
-            </p>
+            <div lang="la" className="mt-6 px-3 pb-4 text-center font-serif text-sm italic tracking-wide text-amber-200/90 sm:text-base">
+              <p>Pro intentionibus precum luci oblatarum</p>
+              <p className="mt-2">Per intercessionem Beatae Mariae Virginis et omnium Angelorum Sanctorumque in caelo.</p>
+            </div>
           </div>
         </section>
       )}
