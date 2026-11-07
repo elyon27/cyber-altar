@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import VerifiedPilgrimGate from '@/components/cyber-altar/VerifiedPilgrimGate';
+import MeltingCandles from '@/components/cyber-altar/MeltingCandles';
 import { supabase } from '@/lib/supabase';
 import { activeCandleTimes } from '@/lib/candle-lifetime';
 import { loadDedications, readLocalDedications } from '@/lib/altar-dedications';
@@ -93,7 +94,7 @@ function MyPrayersContent() {
 
   useEffect(() => {
     void loadAll();
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [loadAll]);
 
@@ -182,6 +183,12 @@ function MyPrayersContent() {
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">Offered Prayer</p>
                       <p className="whitespace-pre-wrap break-words text-base leading-7 text-white/90">{prayer.prayer_text}</p>
                     </div>
+                    {count > 0 && (
+                      <div className="mt-4 rounded-xl border border-amber-400/20 bg-black/20 p-4">
+                        <p className="mb-3 text-sm font-semibold text-amber-100">Burning Candles · {count} active</p>
+                        <MeltingCandles times={prayer.candle_lit_at ?? []} now={now} />
+                      </div>
+                    )}
                   </article>
                 );
               })}
