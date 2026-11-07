@@ -601,6 +601,11 @@ export default function AltarSelectionForm({
                         Change Password
                       </Link>
 
+                      <Link href="/candles"
+                        className="inline-flex items-center justify-center rounded-xl border border-amber-300/50 bg-amber-400/20 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30">
+                        Candles
+                      </Link>
+
                       <button
                         type="button"
                         onClick={handleDeleteAltar}
