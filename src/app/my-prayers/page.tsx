@@ -170,7 +170,7 @@ function MyPrayersContent() {
                         <h2 className="text-xl font-bold text-amber-100">{prayer.altar_slug.toUpperCase()}</h2>
                         <p className="mt-1 text-sm text-white/80"><span className="text-white/60">Dedicated to:</span> {dedications[prayer.altar_slug]?.trim() || 'No dedication saved'}</p>
                       </div>
-                      <Link href={`/altar/${prayer.altar_slug}`} className="rounded-xl border border-cyan-400/30 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/10">
+                      <Link href={`/altar/${prayer.altar_slug}?prayer=${encodeURIComponent(prayer.id)}#offered-prayer-view`} className="rounded-xl border border-cyan-400/30 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/10">
                         Visit Altar
                       </Link>
                     </div>
