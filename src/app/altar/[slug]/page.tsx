@@ -267,6 +267,7 @@ function HolyPlaceContent() {
   const activeCandleCount = prayers.reduce((sum, prayer) => sum + activeCandleTimes(prayer.candle_lit_at, now).length, 0);
   const [prayerText, setPrayerText] = useState('');
   const [innerPrayerId, setInnerPrayerId] = useState<string | null>(null);
+  const [reflectionCounts, setReflectionCounts] = useState<Record<string, number>>({});
   const [prayerIndex, setPrayerIndex] = useState(0);
   const orderedPrayers = useMemo(() => [...prayers].sort((a, b) =>
     b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id)), [prayers]);
@@ -287,6 +288,31 @@ function HolyPlaceContent() {
   const [lightingPrayerId, setLightingPrayerId] = useState<string | null>(null);
   const candleRequestPending = useRef(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Count only completed, non-blank reflections attached to the currently
+  // displayed prayer. Supabase RLS keeps the query private to the owner.
+  const displayedPrayerId = orderedPrayers[currentPrayerIndex]?.id;
+  useEffect(() => {
+    if (!displayedPrayerId) return;
+    let active = true;
+    const refreshCount = async () => {
+      const { data, error } = await supabase.from('prayer_inner_reflections')
+        .select('layer_number, reflection_text')
+        .eq('prayer_id', displayedPrayerId);
+      if (!active) return;
+      if (error) {
+        console.error('Could not load saved reflection count:', error);
+        return;
+      }
+      const savedLayers = new Set((data ?? [])
+        .filter(item => item.reflection_text?.trim())
+        .map(item => item.layer_number));
+      setReflectionCounts(previous => ({ ...previous, [displayedPrayerId]: savedLayers.size }));
+    };
+    void refreshCount();
+    return () => { active = false; };
+  }, [displayedPrayerId]);
+
 
   // Read the exact prayer ID after hydration. Keep that prayer selected by ID
   // rather than by a fragile index that may change when the list refreshes.
@@ -934,10 +960,17 @@ function HolyPlaceContent() {
                           className="rounded-xl border border-amber-300/60 px-4 py-2 text-sm font-semibold text-amber-100 disabled:opacity-50">Keep Prayer Secret</button>
                         {savingVisibility[prayer.id] && <span className="self-center text-sm text-white/70">Saving...</span>}
                       </div>
-                      <button type="button" onClick={() => setInnerPrayerId(prayer.id)}
-                        className="mt-3 mr-2 rounded-xl border border-violet-300/60 bg-violet-400/10 px-4 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-400/20">
-                        7 Layer Inner Prayer
-                      </button>
+                      <div className="mt-3 mr-2 inline-flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={() => setInnerPrayerId(prayer.id)}
+                          className="rounded-xl border border-violet-300/60 bg-violet-400/10 px-4 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-400/20">
+                          7 Layer Inner Prayer
+                        </button>
+                        <span role="status" aria-live="polite"
+                          aria-label={`${reflectionCounts[prayer.id] ?? 0} of 7 reflection layers saved`}
+                          className="rounded-xl border border-violet-300/30 bg-violet-400/10 px-3 py-2 text-sm font-semibold text-violet-100">
+                          {reflectionCounts[prayer.id] === undefined ? '…/7' : `${reflectionCounts[prayer.id]}/7`}
+                        </span>
+                      </div>
                       {profile && (
                         <TransferPrayerControl
                           key={prayer.id}
@@ -984,6 +1017,10 @@ function HolyPlaceContent() {
           key={innerPrayerId}
           prayerId={innerPrayerId}
           prayerText={orderedPrayers.find(prayer => prayer.id === innerPrayerId)!.prayer_text}
+          onReflectionCountChange={count => setReflectionCounts(previous => ({
+            ...previous,
+            [innerPrayerId]: count,
+          }))}
           onClose={() => setInnerPrayerId(null)}
         />
       )}
