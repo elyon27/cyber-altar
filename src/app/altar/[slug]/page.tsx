@@ -270,30 +270,13 @@ function HolyPlaceContent() {
   const [prayerIndex, setPrayerIndex] = useState(0);
   const orderedPrayers = useMemo(() => [...prayers].sort((a, b) =>
     b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id)), [prayers]);
-  const currentPrayerIndex = Math.min(prayerIndex, Math.max(0, orderedPrayers.length - 1));
-  const openedLinkedPrayerRef = useRef<string | null>(null);
-
-  // A My Prayers link includes the exact prayer ID. Select it only once,
-  // after the verified pilgrim's altar prayers have loaded; manual carousel
-  // navigation must not be overridden by subsequent background refreshes.
-  useEffect(() => {
-    if (loading || typeof window === 'undefined') return;
-    const requestedPrayerId = new URLSearchParams(window.location.search).get('prayer');
-    if (!requestedPrayerId || openedLinkedPrayerRef.current === requestedPrayerId) return;
-
-    const requestedIndex = orderedPrayers.findIndex(prayer => prayer.id === requestedPrayerId);
-    if (requestedIndex < 0) return;
-
-    openedLinkedPrayerRef.current = requestedPrayerId;
-    setPrayerIndex(requestedIndex);
-    window.requestAnimationFrame(() => {
-      document.getElementById('offered-prayer-view')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    });
-  }, [loading, orderedPrayers]);
-
+  const [requestedPrayerId, setRequestedPrayerId] = useState<string | null>(null);
+  const [hasNavigatedPrayers, setHasNavigatedPrayers] = useState(false);
+  const linkedPrayerIndex = requestedPrayerId
+    ? orderedPrayers.findIndex(prayer => prayer.id === requestedPrayerId) : -1;
+  const currentPrayerIndex = !hasNavigatedPrayers && linkedPrayerIndex >= 0
+    ? linkedPrayerIndex
+    : Math.min(prayerIndex, Math.max(0, orderedPrayers.length - 1));
 
   const [savingVisibility, setSavingVisibility] = useState<Record<string, boolean>>({});
   const [deletingPrayerId, setDeletingPrayerId] = useState<string | null>(null);
@@ -304,6 +287,33 @@ function HolyPlaceContent() {
   const [lightingPrayerId, setLightingPrayerId] = useState<string | null>(null);
   const candleRequestPending = useRef(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Read the exact prayer ID after hydration. Keep that prayer selected by ID
+  // rather than by a fragile index that may change when the list refreshes.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const readLinkedPrayer = () => {
+      const id = new URLSearchParams(window.location.search).get('prayer');
+      setRequestedPrayerId(id);
+      setHasNavigatedPrayers(false);
+    };
+    readLinkedPrayer();
+    window.addEventListener('popstate', readLinkedPrayer);
+    return () => window.removeEventListener('popstate', readLinkedPrayer);
+  }, [altarSlug]);
+
+  useEffect(() => {
+    if (loading || linkedPrayerIndex < 0 || hasNavigatedPrayers) return;
+    // Scroll only after the correct prayer card is actually rendered.
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('offered-prayer-view')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loading, linkedPrayerIndex, hasNavigatedPrayers]);
+
 
   const altarImageSrc = useMemo(() => {
     return altarSlug ? `/altar/${altarSlug}.jpg` : '';
@@ -951,7 +961,7 @@ function HolyPlaceContent() {
               <nav className="mt-4 flex items-center justify-between gap-3" aria-label="Offered prayer navigation">
                 <button type="button" aria-label="Previous prayer" aria-controls="offered-prayer-view"
                   disabled={prayers.length === 0 || currentPrayerIndex === 0}
-                  onClick={() => setPrayerIndex(Math.max(0, currentPrayerIndex - 1))}
+                  onClick={() => { setPrayerIndex(Math.max(0, currentPrayerIndex - 1)); setHasNavigatedPrayers(true); }}
                   className="rounded-xl border border-white/20 px-4 py-2 text-xl disabled:cursor-not-allowed disabled:opacity-30">
                   <span aria-hidden="true">←</span>
                 </button>
@@ -960,7 +970,7 @@ function HolyPlaceContent() {
                 </span>
                 <button type="button" aria-label="Next prayer" aria-controls="offered-prayer-view"
                   disabled={prayers.length === 0 || currentPrayerIndex >= prayers.length - 1}
-                  onClick={() => setPrayerIndex(Math.min(prayers.length - 1, currentPrayerIndex + 1))}
+                  onClick={() => { setPrayerIndex(Math.min(prayers.length - 1, currentPrayerIndex + 1)); setHasNavigatedPrayers(true); }}
                   className="rounded-xl border border-white/20 px-4 py-2 text-xl disabled:cursor-not-allowed disabled:opacity-30">
                   <span aria-hidden="true">→</span>
                 </button>
