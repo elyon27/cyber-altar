@@ -271,6 +271,29 @@ function HolyPlaceContent() {
   const orderedPrayers = useMemo(() => [...prayers].sort((a, b) =>
     b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id)), [prayers]);
   const currentPrayerIndex = Math.min(prayerIndex, Math.max(0, orderedPrayers.length - 1));
+  const openedLinkedPrayerRef = useRef<string | null>(null);
+
+  // A My Prayers link includes the exact prayer ID. Select it only once,
+  // after the verified pilgrim's altar prayers have loaded; manual carousel
+  // navigation must not be overridden by subsequent background refreshes.
+  useEffect(() => {
+    if (loading || typeof window === 'undefined') return;
+    const requestedPrayerId = new URLSearchParams(window.location.search).get('prayer');
+    if (!requestedPrayerId || openedLinkedPrayerRef.current === requestedPrayerId) return;
+
+    const requestedIndex = orderedPrayers.findIndex(prayer => prayer.id === requestedPrayerId);
+    if (requestedIndex < 0) return;
+
+    openedLinkedPrayerRef.current = requestedPrayerId;
+    setPrayerIndex(requestedIndex);
+    window.requestAnimationFrame(() => {
+      document.getElementById('offered-prayer-view')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
+  }, [loading, orderedPrayers]);
+
 
   const [savingVisibility, setSavingVisibility] = useState<Record<string, boolean>>({});
   const [deletingPrayerId, setDeletingPrayerId] = useState<string | null>(null);
