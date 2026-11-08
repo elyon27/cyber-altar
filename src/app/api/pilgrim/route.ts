@@ -21,6 +21,14 @@ export async function POST(request: Request) {
       return respond({ error: 'Please enter a Pilgrim Name of 1 to 80 characters.' }, 400);
     }
     const db = createAdminSupabaseClient();
+    if (body.action === 'rename') {
+      const authorization = request.headers.get('authorization');
+      if (!authorization?.startsWith('Bearer ')) return respond({ error: 'Please sign in first.' }, 401);
+      const { data: { user }, error: authError } = await db.auth.getUser(authorization.slice(7));
+      if (authError || !user?.email_confirmed_at || user.email?.toLowerCase() !== email) {
+        return respond({ error: 'Please sign in to the account you want to rename.' }, 401);
+      }
+    }
     const { data, error } = await db.rpc('cyber_altar_onboarding', {
       p_email: email, p_action: body.action, p_name: name, p_expected_name: expectedName,
     });

@@ -601,6 +601,11 @@ export default function AltarSelectionForm({
                         Change Password
                       </Link>
 
+                      <Link href="/change-pilgrim-name"
+                        className="inline-flex items-center justify-center rounded-xl border border-amber-300/50 bg-amber-400/20 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30">
+                        Change Pilgrim Name
+                      </Link>
+
                       <Link href="/candles"
                         className="inline-flex items-center justify-center rounded-xl border border-amber-300/50 bg-amber-400/20 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30">
                         Candles
@@ -614,6 +619,10 @@ export default function AltarSelectionForm({
                       >
                         {isDeletingAltar ? 'Deleting...' : 'Delete Altar'}
                       </button>
+                      <Link href="/delete-account"
+                        className="inline-flex items-center justify-center rounded-xl border border-red-500/70 bg-red-600/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500">
+                        Delete Account
+                      </Link>
                     </div>
                   )}
                 </div>
