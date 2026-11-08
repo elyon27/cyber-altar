@@ -7,25 +7,31 @@ declare
 begin
   perform pg_advisory_xact_lock(hashtextextended(v_email, 0));
   select array_agg(distinct n) into v_names from (
-    select pilgrim_name as n from public.cyber_altar_pilgrims where email = v_email
+    select pilgrim_name as n from public.cyber_altar_pilgrims where lower(btrim(email)) = v_email
     union select username from public.altar_profiles where lower(btrim(email)) = v_email
+    union select username from public.altar_prayers where lower(btrim(owner_email)) = v_email
+    union select old.raw_user_meta_data ->> 'cyber_altar_pilgrim_name'
     union select nickname from public.holy_place_records where lower(btrim(email)) = v_email
   ) names where n is not null;
   -- Name-only legacy records are included only when no other account owns that name.
   select array_agg(n) into v_names from unnest(v_names) n
     where not exists(select 1 from public.cyber_altar_pilgrims p where p.pilgrim_name = n and p.email <> v_email)
-      and not exists(select 1 from public.altar_profiles p where p.username = n and lower(btrim(coalesce(p.email,''))) <> v_email);
+      and not exists(select 1 from public.altar_profiles p where p.username = n and nullif(lower(btrim(p.email)), '') <> v_email)
+      and not exists(select 1 from public.altar_prayers p where p.username = n and nullif(lower(btrim(p.owner_email)), '') <> v_email);
   delete from public.prayer_inner_reflections where owner_id = old.id;
   delete from public.altar_prayers where lower(btrim(owner_email)) = v_email
-    or profile_id in (select id from public.altar_profiles where lower(btrim(email)) = v_email);
+    or profile_id in (select id from public.altar_profiles where lower(btrim(email)) = v_email)
+    or (username = any(v_names) and nullif(btrim(owner_email), '') is null
+      and (profile_id is null or profile_id in (select id from public.altar_profiles where nullif(btrim(email), '') is null)));
   delete from public.altar_dedications where lower(btrim(owner_email)) = v_email;
   delete from public.altar_candles where username = any(v_names);
   delete from public.altar_history where username = any(v_names);
   delete from public.cyber_altar_candles where pilgrim_name = any(v_names);
   delete from public.cyber_altar_prayers where pilgrim_name = any(v_names);
   delete from public.holy_place_records where lower(btrim(email)) = v_email;
-  delete from public.altar_profiles where lower(btrim(email)) = v_email;
-  delete from public.cyber_altar_pilgrims where email = v_email;
+  delete from public.altar_profiles where lower(btrim(email)) = v_email
+    or (username = any(v_names) and nullif(btrim(email), '') is null);
+  delete from public.cyber_altar_pilgrims where lower(btrim(email)) = v_email;
   return old;
 end;
 $$;

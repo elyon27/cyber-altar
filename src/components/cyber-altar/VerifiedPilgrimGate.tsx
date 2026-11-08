@@ -3,6 +3,7 @@
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { scopeAccountCache } from '@/lib/account-cache';
 import { supabase } from '@/lib/supabase';
 
 export default function VerifiedPilgrimGate({ children }: { children: ReactNode }) {
@@ -20,6 +21,12 @@ export default function VerifiedPilgrimGate({ children }: { children: ReactNode 
       const selected = (localStorage.getItem('cyber_altar_email') || '').trim().toLowerCase();
       if (active) setEmail(selected);
       const { data: { user } } = await supabase.auth.getUser();
+      if (active && user?.email_confirmed_at && user.email?.toLowerCase() === selected) {
+        const name = localStorage.getItem('cyber_altar_username');
+        scopeAccountCache(user.id);
+        localStorage.setItem('cyber_altar_email', selected);
+        if (name) localStorage.setItem('cyber_altar_username', name);
+      }
       if (active) { setReady(!!selected && !!user?.email_confirmed_at && user.email?.toLowerCase() === selected); setChecking(false); }
     };
     void check();
@@ -49,6 +56,10 @@ export default function VerifiedPilgrimGate({ children }: { children: ReactNode 
       if (error) throw error;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email_confirmed_at || user.email?.toLowerCase() !== email) throw new Error('Please verify the email used at the entrance.');
+      const name = localStorage.getItem('cyber_altar_username');
+      scopeAccountCache(user.id);
+      localStorage.setItem('cyber_altar_email', email);
+      if (name) localStorage.setItem('cyber_altar_username', name);
       setReady(true);
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to verify the code.'); }
     finally { setBusy(false); }

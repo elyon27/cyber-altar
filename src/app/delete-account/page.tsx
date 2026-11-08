@@ -2,6 +2,7 @@
 import { FormEvent, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { clearAccountCache } from '@/lib/account-cache';
 import VerifiedPilgrimGate from '@/components/cyber-altar/VerifiedPilgrimGate';
 function DeleteForm() {
   const [confirmation, setConfirmation] = useState('');
@@ -19,12 +20,8 @@ function DeleteForm() {
       const response = await fetch('/api/account', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ confirmation }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Unable to delete your account.');
-      // Clear this app's cached personal data, including legacy keys in the WebView.
-      for (const storage of [localStorage, sessionStorage]) {
-        for (const key of Object.keys(storage)) {
-          if (/^cyber[_-]altar|^sb-.*-auth-token/.test(key)) storage.removeItem(key);
-        }
-      }
+      await supabase.auth.signOut({ scope: 'local' });
+      clearAccountCache();
       window.location.replace('/?accountDeleted=1');
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to delete your account.'); }
     finally { pending.current = false; setBusy(false); }

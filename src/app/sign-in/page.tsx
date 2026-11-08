@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { scopeAccountCache } from '@/lib/account-cache';
 import PasswordResetForm from '@/components/cyber-altar/PasswordResetForm';
 
 export default function PasswordSignIn() {
@@ -35,6 +36,7 @@ export default function PasswordSignIn() {
       });
       const identity = await response.json();
       if (!response.ok) throw new Error(identity.error || 'Unable to load your pilgrim details.');
+      scopeAccountCache(data.session.user.id);
       localStorage.setItem('cyber_altar_email', identity.email);
       localStorage.setItem('cyber_altar_username', identity.name);
       localStorage.removeItem('cyber_altar_selected_altar');

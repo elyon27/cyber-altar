@@ -1,5 +1,7 @@
 'use client';
 
+import { scopeAccountCache } from '@/lib/account-cache';
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import AltarSelectionForm from '@/components/cyber-altar/AltarSelectionForm';
@@ -78,6 +80,13 @@ export default function SelectAltarPage() {
       const requestId = ++generation;
       const username = (localStorage.getItem('cyber_altar_username') || '').trim();
       const email = (localStorage.getItem('cyber_altar_email') || '').trim().toLowerCase();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!active || requestId !== generation) return;
+      if (user?.email_confirmed_at && user.email?.trim().toLowerCase() === email) {
+        scopeAccountCache(user.id);
+        localStorage.setItem('cyber_altar_username', username);
+        localStorage.setItem('cyber_altar_email', email);
+      }
       setIdentity({ username, email });
       setHistoryError('');
       const keys = email

@@ -26,22 +26,9 @@ async function dedicationOwner() {
 export async function loadDedications(slugs: string[]) {
   if (!slugs.length) return {};
   const email = await dedicationOwner();
-  const local = readLocalDedications(slugs, email);
-  const fetchRows = () => supabase.from('altar_dedications').select('altar_slug, dedicatee')
+  const { data, error } = await supabase.from('altar_dedications').select('altar_slug, dedicatee')
     .eq('owner_email', email).in('altar_slug', slugs);
-  let { data, error } = await fetchRows();
   if (error) throw error;
-
-  const existing = new Set((data ?? []).map(row => row.altar_slug));
-  const legacy = slugs.filter(slug => local[slug]?.trim() && !existing.has(slug))
-    .map(slug => ({ owner_email: email, altar_slug: slug, dedicatee: local[slug].trim() }));
-  if (legacy.length) {
-    const migration = await supabase.from('altar_dedications')
-      .upsert(legacy, { onConflict: 'owner_email,altar_slug', ignoreDuplicates: true });
-    if (migration.error) throw migration.error;
-    ({ data, error } = await fetchRows());
-    if (error) throw error;
-  }
   return Object.fromEntries((data ?? []).map(row => [row.altar_slug, row.dedicatee]));
 }
 
